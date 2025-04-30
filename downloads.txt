@@ -1,0 +1,10 @@
+Download mouse genome file (primary assembly) from ensemble using 
+wget >link<
+
+Download CHECKSUM file from ensemble
+run: 
+cat CHECKSUMS
+
+sum >downloaded file< 
+
+compare relvant file 
