@@ -7,4 +7,4 @@ cat CHECKSUMS
 
 sum >downloaded file< 
 
-compare relevant file 
+compare relevant file to check whether the download has worked
