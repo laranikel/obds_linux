@@ -7,4 +7,4 @@ cat CHECKSUMS
 
 sum >downloaded file< 
 
-compare relvant file 
+compare relevant file 
