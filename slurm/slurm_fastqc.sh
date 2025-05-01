@@ -1,7 +1,7 @@
 #!/bin/bash
 ##########################################################################
 ## A script template for submitting batch jobs. To submit a batch job, 
-## please type
+## please type. Remember to load mamba first . Run from your output directory.
 ##
 ##    sbatch script_name.sh
 ##
