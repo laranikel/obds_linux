@@ -44,4 +44,10 @@
 
 # Execute these commands 
 
-hisat2 --threads 8 -x /project/shared/linux/5_rnaseq/hisat2_index/mm10 -1 /project/exet5457/2_rnaseq/1_fastq/cd4_rep1_read1.fastq.gz  -2 /project/exet5457/2_rnaseq/1_fastq/cd4_rep1_read2.fastq.gz --rna-strandness RF --summary-file /project/exet5457/2_rnaseq/3_analysis/2_Mapping/stats.txt -S aln-pe.sam
+hisat2 --threads 8 \
+ -x /project/shared/linux/5_rnaseq/hisat2_index/mm10 \
+ -1 /project/exet5457/2_rnaseq/1_fastq/cd4_rep1_read1.fastq.gz \
+ -2 /project/exet5457/2_rnaseq/1_fastq/cd4_rep1_read2.fastq.gz \
+ --rna-strandness RF \
+ --summary-file /project/exet5457/2_rnaseq/3_analysis/2_Mapping/stats.txt \
+ -S /project/exet5457/2_rnaseq/3_analysis/2_Mapping/aln-pe.sam
