@@ -44,14 +44,15 @@
 
 # Execute these commands 
 
+# Pay attention to strandedness 1= forwards, 2=reversed, if  % mapped reads is bad,  consider changing 
 
 featureCounts \
 	-t exon \
 	-g gene_id \
-	-s 1 \
+	-s 2 \
 	-p \
 	--countReadPairs \
 	-T 8 \
-	-a /project/exet5457/2_rnaseq/2_genome/Mus_musculus.GRCm39.113.gtf.gz \
+	-a /project/exet5457/2_rnaseq/2_genome/Mus_musculus.GRCm38.102.gtf.gz \
 	-o /project/exet5457/2_rnaseq/3_analysis/3_Counts/counts.txt \
 	/project/exet5457/2_rnaseq/3_analysis/2_Mapping/aln-pe_sorted.bam
