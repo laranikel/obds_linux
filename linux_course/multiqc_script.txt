@@ -1,0 +1,7 @@
+#Run multiqc on parent analysis file to include fastQC and mappingQC. Can run it on the entire analysis folder (will ignore irrelevant files), specify with -o for output
+
+# This example is for mapping qx
+
+multiqc -o /project/exet5457/2_rnaseq/3_analysis/3_Mapping_QC/multiqc_report_mapping /project/exet5457/2_rnaseq/3_analysis/
+
+# Dowload and inspect html output file using filezilla
