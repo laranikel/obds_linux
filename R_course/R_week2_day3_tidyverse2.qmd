@@ -1,0 +1,184 @@
+---
+title: 'Template: Integrated exercise using the <i class="fab fa-r-project"></i> tidyverse'
+author: "Kevin Rue-Albrecht"
+date: "2023-06-09"
+date-format: long
+format: html
+---
+
+```{r}
+#| label: load-packages
+#| include: false
+
+library(tidyverse)
+library(readxl)
+```
+
+## Exercise
+
+### Part 1
+
+We provide you with an Excel file that contains gene expression data for the nine most highly variable genes in a pancreas cancer gene expression dataset (<https://portal.gdc.cancer.gov/projects/TCGA-PAAD>), as well as metadata for the individual samples and genes.
+
+- Import the gene expression matrix from the Excel file into the R session as a `tibble`.
+  Assign it to an object named `exprs_assay`.
+
+```{r}
+library(   )
+excel_sheets("/project/shared/r/1_r_data_science/7-tidyverse-workflow/EH2011.xlsx")
+exprs_assay <- read_xlsx("/project/shared/r/1_r_data_science/7-tidyverse-workflow/EH2011.xlsx", sheet = "exprs") 
+exprs_assay
+```
+
+- Reshape the gene expression matrix in a tidy format.
+  Assign it to a new object `exprs_assay_long`.
+
+```{r}
+exprs_assay_long <- exprs_assay %>%
+  pivot_longer(cols = where(is.numeric), names_to = "samples", values_to = "expression")
+      
+exprs_assay_long
+```
+
+- Draw a histogram of gene expression levels for each gene in a separate facet.
+
+```{r}
+ggplot(exprs_assay_long, aes(x = expression, fill = gene)) +
+  geom_histogram(bins = 20) +
+  facet_wrap(~gene)
+
+
+
+```
+
+## Exercise
+
+### Part 2
+
+- Import the sample metadata from the Excel file into the R session as a `tibble`.
+  Assign it to an object named `sample_info`.
+
+```{r}
+excel_sheets( "/project/shared/r/1_r_data_science/7-tidyverse-workflow/EH2011.xlsx"  )
+sample_info <- read_xlsx("/project/shared/r/1_r_data_science/7-tidyverse-workflow/EH2011.xlsx", sheet = "sample_info")  
+sample_info
+```
+
+> Metadata key:
+> 
+> [NIH AJCC staging system](https://www.cancer.gov/publications/dictionaries/ca> ncer-terms/def/ajcc-staging-system)
+> 
+> - grade: how abnormal the cancer cells and tissue look under a microscope
+> - T: size of the tumor and any spread of cancer into nearby tissue
+> - N: spread of cancer to nearby lymph nodes
+> - M: metastasis (spread of cancer to other parts of the body)
+
+- Convert the four columns above to the factor type.
+
+```{r}
+sample_info <- sample_info %>%
+  mutate(across(c(4:7), as.factor))
+
+
+sample_info
+```
+
+- Combine sample information with gene expression data.
+  Assign the output to `exprs_sampleinfo`.
+
+```{r}
+exprs_sampleinfo <- 
+  left_join(exprs_assay_long, sample_info, by = c("samples" = "unique_patient_ID"))
+
+# or join_by(samples == unique_patient_ID)
+
+exprs_sampleinfo
+```
+
+## Exercise
+
+### Part 3
+
+- Identify the gene with the largest absolute difference in expression between male and female patients.
+
+```{r}
+mean_exp <- exprs_sampleinfo %>% 
+  group_by(gene, sex) %>% 
+  summarise(mean_gene_exp = mean(expression))
+  
+mean_exp
+
+mean_exp %>% 
+  pivot_wider(values_from = mean_gene_exp, names_from = sex) %>% 
+  mutate(
+    sex_diff = M - F) %>% 
+    arrange(desc(abs(sex_diff))) 
+
+# Can arrange by absolute values without converting into absolute values 
+
+```
+
+- Visualise the expression of that gene across tumour grades.
+  Facet by `sex`.
+  Color by `T` score.
+
+```{r}
+table_for_ggplot <- exprs_sampleinfo %>% 
+ filter(gene == "XIST")
+
+table_for_ggplot
+```
+
+```{r}
+ggplot(table_for_ggplot, aes(x = expression, fill = T)) +
+         geom_histogram() +
+         facet_wrap(~sex)                     # facet_grid(T~sex)
+
+
+```
+or a boxplot 
+
+```{r}
+ggplot(table_for_ggplot, aes(x = grade, y = expression, fill = grade)) +
+         geom_boxplot() +
+         facet_wrap(~sex)   
+```
+violin plot
+
+```{r}
+ggplot(table_for_ggplot, aes(x = grade, y = expression, fill = grade)) +
+         geom_violin() +
+         facet_wrap(~sex) 
+```
+
+
+- Draw a heat map of all nine genes.
+  Remove labels as well as ticks for the x-axis.
+  Remove the panel grid and background.
+
+```{r}
+ggplot(exprs_sampleinfo, aes(samples, gene, fill = expression)) +
+  geom_raster() + 
+  theme(axis.ticks.x = element_blank(), axis.title.x = element_blank(), axis.text.x = element_blank(), panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), plot.background = element_blank())
+
+
+
+
+```
+
+- Repeat the heat map, grouping samples by sex.
+
+```{r}
+# Copy the code chunk above and tweak the aes(...) contents.
+ggplot(exprs_sampleinfo, aes(x = samples, y = gene, fill = expression)) +
+  geom_raster() + 
+  theme(axis.ticks.x = element_blank(), axis.title.x = element_blank(), axis.text.x = element_blank(), panel.grid = element_blank(), plot.background = element_blank()) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  #scale_fill_viridis_c() +
+  #scale_fill_gradient2(low = "darkred", mid = "orange", high = "yellow") +
+facet_wrap(~sex, scales = "free_x") 
+  
+  
+
+
+```
