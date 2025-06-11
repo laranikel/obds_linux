@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kevin Rue-Albrecht &amp; Liezel Tamon (modified by Lucy Garner)">
+<meta name="dcterms.date" content="2025-05-30">
+
+<title>Template: Single-cell integration</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="singleCell_Integration_files/libs/clipboard/clipboard.min.js"></script>
+<script src="singleCell_Integration_files/libs/quarto-html/quarto.js"></script>
+<script src="singleCell_Integration_files/libs/quarto-html/popper.min.js"></script>
+<script src="singleCell_Integration_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="singleCell_Integration_files/libs/quarto-html/anchor.min.js"></script>
+<link href="singleCell_Integration_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="singleCell_Integration_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="singleCell_Integration_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="singleCell_Integration_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="singleCell_Integration_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Template: Single-cell integration</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kevin Rue-Albrecht &amp; Liezel Tamon (modified by Lucy Garner) </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 30, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="preamble" class="level2">
+<h2 class="anchored" data-anchor-id="preamble">Preamble</h2>
+<p>Refer to the vignette <a href="https://satijalab.org/seurat/articles/seurat5_integration#perform-streamlined-one-line-integrative-analysis">Integrative analysis in Seurat v5</a> for guidance throughout the workflow. Some of the functions required for this workflow are only mentioned in this vignette and not documented in the Seurat package itself.</p>
+</section>
+<section id="import-data-sets-to-integrate" class="level2">
+<h2 class="anchored" data-anchor-id="import-data-sets-to-integrate">Import data sets to integrate</h2>
+<ul>
+<li>Use <code>readRDS()</code> to import two prefiltered PBMC data sets from the files <code>pbmcv2_filtered.rds</code> and <code>pbmcv3_filtered.rds</code>.</li>
+<li>Name the R objects <code>pbmcv2</code> and <code>pbmcv3</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pbmcv2 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"/project/shared/r/2_r_single_cell/3-integration/pbmcv2_filtered.rds"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>pbmcv3 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"/project/shared/r/2_r_single_cell/3-integration/pbmcv3_filtered.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Those RDS files contain objects that have been preprocessed through quality control and filtering, as demonstrated in the Seurat day 1 lesson.</p>
+</section>
+<section id="prepare-the-data-sets-for-integration" class="level2">
+<h2 class="anchored" data-anchor-id="prepare-the-data-sets-for-integration">Prepare the data sets for integration</h2>
+<ul>
+<li>Use <code>merge()</code> to combine the two Seurat objects into a single object named <code>obj</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">merge</span>(pbmcv2, pbmcv3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Some cell names are duplicated across objects provided. Renaming to
+enforce unique cell names.</code></pre>
+</div>
+</div>
+<p>In previous versions of Seurat, the integration workflow would have required the data to be represented as distinct Seurat objects.<br>
+When using Seurat version 5 assays, we can instead keep all the data in one object, but simply split the layers.</p>
+<ul>
+<li>Display the merged Seurat object.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>obj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
+23010 features across 17142 samples within 1 assay 
+Active assay: RNA (23010 features, 0 variable features)
+ 2 layers present: counts.v2, counts.v3</code></pre>
+</div>
+</div>
+<p><strong>How do you interpret the “layer” information?</strong></p>
+<blockquote class="blockquote">
+<p>Answer:</p>
+</blockquote>
+</section>
+<section id="integration-without-correction" class="level2">
+<h2 class="anchored" data-anchor-id="integration-without-correction">Integration without correction</h2>
+<ul>
+<li>Use the functions <code>NormalizeData()</code>, <code>FindVariableFeatures()</code>, <code>ScaleData()</code>, and <code>RunPCA()</code> to performed a standard Seurat analysis without integration.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">NormalizeData</span>(<span class="at">object =</span> obj, </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">normalization.method =</span> <span class="st">'LogNormalize'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Normalizing layer: counts.v2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Normalizing layer: counts.v3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindVariableFeatures</span>(<span class="at">object =</span> obj, <span class="at">selection.method =</span> <span class="st">"vst"</span>, <span class="at">nfeatures =</span> <span class="dv">2000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Finding variable features for layer counts.v2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Finding variable features for layer counts.v3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">ScaleData</span>(<span class="at">object =</span> obj, <span class="at">vars.to.regress =</span> <span class="st">"percent_mt"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Regressing out percent_mt</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Centering and scaling data matrix</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">RunPCA</span>(obj, <span class="at">features =</span> <span class="fu">VariableFeatures</span>(<span class="at">object =</span> obj))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>PC_ 1 
+Positive:  LYZ, FCN1, CST3, S100A9, MNDA, CTSS, VCAN, S100A8, LST1, TYMP 
+       SERPINA1, TYROBP, CSTA, FTL, PSAP, AIF1, SPI1, GRN, NCF2, LGALS1 
+       MS4A6A, CYBB, CD68, CD14, CD36, S100A12, MPEG1, FTH1, FGL2, CSF3R 
+Negative:  LTB, IL32, CD3D, TCF7, TRBC2, IL7R, CD3G, CD7, IFITM1, CD27 
+       CD247, ISG20, CCR7, TRAC, ARL4C, CD2, LEF1, BCL11B, GZMM, CD69 
+       TRBC1, MAL, AQP3, ITM2A, TRABD2A, RORA, SYNE2, CTSW, INPP4B, CDC25B 
+PC_ 2 
+Positive:  MS4A1, CD79A, BANK1, IGHM, LINC00926, HLA-DQA1, CD79B, HLA-DQB1, TCL1A, SPIB 
+       FCER2, RALGPS2, CD22, HLA-DRA, VPREB3, HLA-DQA2, CD74, IGHD, HLA-DPB1, AFF3 
+       FCRLA, FCRL1, HLA-DRB1, HLA-DPA1, TSPAN13, CD19, BLK, BLNK, BCL11A, HLA-DRB5 
+Negative:  CD247, CD7, IL32, GZMM, CTSW, NKG7, GZMA, PRF1, CST7, ANXA1 
+       S100A4, KLRD1, GNLY, KLRB1, CCL5, CD3D, IFITM1, SAMD3, TMSB4X, IL2RB 
+       KLRF1, ARL4C, MATK, FGFBP2, TRBC1, SRGN, CD2, KLRG1, SPON2, CD3G 
+PC_ 3 
+Positive:  GZMB, NKG7, GNLY, CLIC3, KLRD1, CST7, PRF1, KLRF1, GZMA, SPON2 
+       FGFBP2, HOPX, TBX21, ADGRG1, CCL4, IL2RB, S1PR5, FCGR3A, PTGDR, SH2D1B 
+       MATK, GZMH, TRDC, TTC38, CCL5, AKR1C3, C12orf75, RHOC, CTSW, PRSS23 
+Negative:  TCF7, LEF1, IL7R, CCR7, MAL, CD3D, CD3G, TRABD2A, CD27, LTB 
+       RGCC, VIM, RGS10, NELL2, BCL11B, INPP4B, FHIT, CD40LG, TRAC, LRRN3 
+       AQP3, PASK, TSHZ2, MYC, C20orf204, CD28, BEX3, PIM2, FOSB, AIF1 
+PC_ 4 
+Positive:  TMSB10, CYBA, MT-CO1, CD37, NKG7, PRF1, GNLY, KLRD1, CST7, FGFBP2 
+       KLRF1, SPON2, GZMA, EFHD2, TBX21, HOPX, ADGRG1, CCL4, S1PR5, MS4A1 
+       SH2D1B, CD79B, LINC00926, CD79A, MATK, IL2RB, FCGR3A, CD74, TTC38, CX3CR1 
+Negative:  CAVIN2, PPBP, TUBB1, PF4, GNG11, SPARC, PRKAR2B, CLU, PTCRA, GP9 
+       TREML1, MPIG6B, ITGA2B, CMTM5, ACRBP, C2orf88, CLDN5, TMEM40, TSC22D1, AC147651.1 
+       MTURN, CLEC1B, CTTN, GMPR, ARHGAP6, AP001189.1, MMD, SH3BGRL2, CD9, MYLK 
+PC_ 5 
+Positive:  MS4A1, LINC00926, CD79A, BANK1, CD79B, PDLIM1, FCER2, FCRL1, VPREB3, CD19 
+       CD22, RALGPS2, CD40, FCRL3, IGHD, SWAP70, P2RX5, PAX5, HLA-DOB, TNFRSF13C 
+       PLPP5, ADAM28, POU2AF1, BLK, HVCN1, FGFBP2, GNLY, LINC02397, TSPAN33, CD24 
+Negative:  LILRA4, CLEC4C, SERPINF1, IL3RA, LRRC26, SCT, TPM2, DNASE1L3, SMPD3, TNFRSF21 
+       PACSIN1, DERL3, ITM2C, PLD4, GAS6, PPM1J, LAMP5, LINC00996, SCAMP5, MAP1A 
+       KCNK17, AC097375.1, ZFAT, UGCG, SCN9A, MZB1, LGMN, PHEX, CYP46A1, CIB2 </code></pre>
+</div>
+</div>
+<ul>
+<li>Use the functions <code>FindNeighbors()</code> and <code>FindClusters()</code> to compute cluster labels.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>For <code>FindNeighbors()</code>, use arguments <code>dims = 1:30</code> and <code>reduction = "pca"</code>.</li>
+<li>For <code>FindClusters()</code>, use arguments <code>resolution = 2</code>, <code>cluster.name = "unintegrated_clusters"</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindNeighbors</span>(<span class="at">object =</span> obj, <span class="at">reduction =</span> <span class="st">"pca"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing nearest neighbor graph</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing SNN</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindClusters</span>(<span class="at">object =</span> obj, <span class="at">resolution =</span> <span class="dv">2</span>, <span class="at">cluster.name =</span> <span class="st">"unintegrated_clusters"</span> )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
+
+Number of nodes: 17142
+Number of edges: 677517
+
+Running Louvain algorithm...
+Maximum modularity in 10 random starts: 0.8542
+Number of communities: 36
+Elapsed time: 3 seconds</code></pre>
+</div>
+</div>
+<ul>
+<li>Use <code>table()</code> to tabulate the number of cells in each cluster.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(obj<span class="sc">$</span>unintegrated_clusters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+   0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15 
+2177 1307 1139 1123 1013  979  935  890  777  711  620  479  465  411  395  380 
+  16   17   18   19   20   21   22   23   24   25   26   27   28   29   30   31 
+ 316  290  280  279  259  253  242  220  211  209  145  141  123   91   82   60 
+  32   33   34   35 
+  46   38   29   27 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(obj<span class="sc">$</span>seurat_clusters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+   0    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15 
+2177 1307 1139 1123 1013  979  935  890  777  711  620  479  465  411  395  380 
+  16   17   18   19   20   21   22   23   24   25   26   27   28   29   30   31 
+ 316  290  280  279  259  253  242  220  211  209  145  141  123   91   82   60 
+  32   33   34   35 
+  46   38   29   27 </code></pre>
+</div>
+</div>
+<ul>
+<li>Use <code>RunUMAP()</code> to compute a UMAP layout.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Use argument <code>dims = 1:30</code>, to match the number of principal components used for clustering.</li>
+<li>Use argument <code>reduction = "pca"</code>, to match the input data used for clustering.</li>
+<li>Use argument <code>reduction.name = "umap.unintegrated"</code>, to distinguish this UMAP from the ones we will compute later with integration.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(<span class="at">object =</span> obj, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">reduction =</span> <span class="st">"pca"</span>, <span class="at">reduction.name =</span> <span class="st">"umap.unintegrated"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: The default method for RunUMAP has changed from calling Python UMAP via reticulate to the R-native UWOT using the cosine metric
+To use Python UMAP via reticulate, set umap.method to 'umap-learn' and metric to 'correlation'
+This message will be shown once per session</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:38:37 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:38:37 Read 17142 rows and found 30 numeric columns</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:38:37 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:38:37 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[----|----|----|----|----|----|----|----|----|----|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>**************************************************|
+12:38:40 Writing NN index file to temp file /project/.tmpRsessions/RtmpkYxuff/file3f93306616f58b
+12:38:40 Searching Annoy index using 1 thread, search_k = 3000
+12:38:48 Annoy recall = 100%
+12:38:49 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+12:38:50 Initializing from normalized Laplacian + noise (using RSpectra)
+12:38:51 Commencing optimization for 200 epochs, with 751902 positive edges
+12:39:01 Optimization finished</code></pre>
+</div>
+</div>
+<ul>
+<li>Use <code>DimPlot()</code> to display the unintegrated UMAP layout.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Use the argument <code>group.by = c("orig.ident", "unintegrated_clusters")</code> to colour by experiment and by cluster without integration.</li>
+<li>Use the argument <code>combine = FALSE</code> to receive a list of <code>ggplot</code> objects rather than a combined plot.</li>
+<li>Assign the output of <code>DimPlot()</code> to an object called <code>plots_unintegrated</code>, to capture it for displaying it again later.</li>
+<li>Use <code>wrap_plots()</code> – from the <code>cowplot</code> package – to display the list of plots in <code>plots_unintegrated</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>plots_unintegrated <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.unintegrated"</span>, <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">"orig.ident"</span>, <span class="st">"unintegrated_clusters"</span>), <span class="at">combine =</span> <span class="cn">FALSE</span> )</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="fu">wrap_plots</span>(plots_unintegrated)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-9-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="one-line-integration-using-seurat-v5" class="level2">
+<h2 class="anchored" data-anchor-id="one-line-integration-using-seurat-v5">One-line integration using Seurat v5</h2>
+<p>Refer to the section <a href="https://satijalab.org/seurat/articles/seurat5_integration#perform-streamlined-one-line-integrative-analysis">Perform streamlined (one-line) integrative analysis</a> in the Seurat vignette.</p>
+<ul>
+<li>Display the Seurat object one more time before performing any integration. This summarised view of the Seurat object will be useful to compare with later versions of the object after performing integration using different methods.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>obj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
+23010 features across 17142 samples within 1 assay 
+Active assay: RNA (23010 features, 2000 variable features)
+ 5 layers present: counts.v2, counts.v3, data.v2, data.v3, scale.data
+ 2 dimensional reductions calculated: pca, umap.unintegrated</code></pre>
+</div>
+</div>
+<ul>
+<li>Use <code>IntegrateLayers()</code> to perform integration using the <code>CCAIntegration</code> method.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Set the argument <code>orig.reduction = "pca"</code> to specify the dimensionality reduction to use for correction.</li>
+<li>Set the argument <code>new.reduction = "integrated.cca"</code> to specify the name of the new integrated dimensionality reduction result to create.</li>
+<li>Set the argument <code>verbose = FALSE</code> to suppress messages otherwise displayed during the execution of the function.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">IntegrateLayers</span>(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object =</span> obj, <span class="at">method =</span> <span class="st">"CCAIntegration"</span>,</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">orig.reduction =</span> <span class="st">"pca"</span>, <span class="at">new.reduction =</span> <span class="st">"integrated.cca"</span>,</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Display the Seurat object.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>obj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
+23010 features across 17142 samples within 1 assay 
+Active assay: RNA (23010 features, 2000 variable features)
+ 5 layers present: counts.v2, counts.v3, data.v2, data.v3, scale.data
+ 3 dimensional reductions calculated: pca, umap.unintegrated, integrated.cca</code></pre>
+</div>
+</div>
+<p><strong>Note:</strong></p>
+<p>You should see a new dimensionality reduction result called <code>integrated.cca</code>.</p>
+<ul>
+<li>Use <code>IntegrateLayers()</code> to perform integration using the <code>RPCAIntegration</code> method.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Set the argument <code>orig.reduction = "pca"</code> to specify the dimensionality reduction to use for correction.</li>
+<li>Set the argument <code>new.reduction = "integrated.rpca"</code> to specify the name of the new integrated dimensionality reduction result to create.</li>
+<li>Set the argument <code>verbose = FALSE</code> to suppress messages otherwise displayed during the execution of the function.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">IntegrateLayers</span>(</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object =</span> obj, <span class="at">method =</span> <span class="st">"RPCAIntegration"</span>,</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">orig.reduction =</span> <span class="st">"pca"</span>, <span class="at">new.reduction =</span> <span class="st">"integrated.rpca"</span>,</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Display the Seurat object.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>obj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
+23010 features across 17142 samples within 1 assay 
+Active assay: RNA (23010 features, 2000 variable features)
+ 5 layers present: counts.v2, counts.v3, data.v2, data.v3, scale.data
+ 4 dimensional reductions calculated: pca, umap.unintegrated, integrated.cca, integrated.rpca</code></pre>
+</div>
+</div>
+<p><strong>Note:</strong></p>
+<p>You should see a new dimensionality reduction result called <code>integrated.rpca</code>.</p>
+<ul>
+<li>Use <code>IntegrateLayers()</code> to perform integration using the <code>HarmonyIntegration</code> method.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Set the argument <code>orig.reduction = "pca"</code> to specify the dimensionality reduction to use for correction.</li>
+<li>Set the argument <code>new.reduction = "harmony"</code> to specify the name of the new integrated dimensionality reduction result to create.</li>
+<li>Set the argument <code>verbose = FALSE</code> to suppress messages otherwise displayed during the execution of the function.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">IntegrateLayers</span>(</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object =</span> obj, <span class="at">method =</span> <span class="st">"HarmonyIntegration"</span>,</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">orig.reduction =</span> <span class="st">"pca"</span>, <span class="at">new.reduction =</span> <span class="st">"harmony"</span>,</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Display the Seurat object.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>obj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
+23010 features across 17142 samples within 1 assay 
+Active assay: RNA (23010 features, 2000 variable features)
+ 5 layers present: counts.v2, counts.v3, data.v2, data.v3, scale.data
+ 5 dimensional reductions calculated: pca, umap.unintegrated, integrated.cca, integrated.rpca, harmony</code></pre>
+</div>
+</div>
+<p><strong>Note:</strong></p>
+<p>You should see a new dimensionality reduction result called <code>harmony</code>.</p>
+<ul>
+<li>Use <code>IntegrateLayers()</code> to perform integration using the <code>FastMNNIntegration</code> method.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>The <code>FastMNNIntegration</code> method requires the package <code>SeuratWrappers</code>.</li>
+<li>Set the argument <code>new.reduction = "integrated.mnn"</code> to specify the name of the new integrated dimensionality reduction result to create.</li>
+<li>Set the argument <code>verbose = FALSE</code> to suppress messages otherwise displayed during the execution of the function.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">IntegrateLayers</span>(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object =</span> obj, <span class="at">method =</span> <span class="st">"FastMNNIntegration"</span>,</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">orig.reduction =</span> <span class="st">"pca"</span>, <span class="at">new.reduction =</span> <span class="st">"integrated.mnn"</span>,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Layer counts isn't present in the assay object; returning NULL</code></pre>
+</div>
+</div>
+<ul>
+<li>Display the Seurat object.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>obj</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>An object of class Seurat 
+25010 features across 17142 samples within 2 assays 
+Active assay: RNA (23010 features, 2000 variable features)
+ 5 layers present: counts.v2, counts.v3, data.v2, data.v3, scale.data
+ 1 other assay present: mnn.reconstructed
+ 6 dimensional reductions calculated: pca, umap.unintegrated, integrated.cca, integrated.rpca, harmony, integrated.mnn</code></pre>
+</div>
+</div>
+<p><strong>Note:</strong></p>
+<p>You should see a new dimensionality reduction result called <code>integrated.mnn</code>.</p>
+<ul>
+<li>Perform integration using sctransform-normalised data - remember to <code>RunPCA()</code> after <code>SCTransform()</code>.</li>
+<li>Use the <code>RPCAIntegration</code> method.</li>
+<li>Set the argument <code>new.reduction = "integrated.rpca.sct"</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">future.globals.maxSize =</span> <span class="fl">3e+09</span>)</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">SCTransform</span>(obj, <span class="at">assay =</span> <span class="st">"RNA"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Running SCTransform on assay: RNA</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Running SCTransform on layer: counts.v2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>vst.flavor='v2' set. Using model with fixed slope and excluding poisson genes.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Variance stabilizing transformation of count matrix of size 18738 by 9848</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Model formula is y ~ log_umi</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Get Negative Binomial regression parameters per gene</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Using 2000 genes, 5000 cells</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found 273 outliers - those will be ignored in fitting/regularization step</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Second step: Get residuals using fitted parameters for 18738 genes</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing corrected count matrix for 18738 genes</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Calculating gene attributes</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Wall clock passed: Time difference of 46.00287 secs</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Determine variable features</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Centering data matrix</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting residuals for block 1(of 2) for v2 dataset</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting residuals for block 2(of 2) for v2 dataset</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Centering data matrix</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Finished calculating residuals for v2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Running SCTransform on layer: counts.v3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>vst.flavor='v2' set. Using model with fixed slope and excluding poisson genes.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Variance stabilizing transformation of count matrix of size 18341 by 7294</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Model formula is y ~ log_umi</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Get Negative Binomial regression parameters per gene</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Using 2000 genes, 5000 cells</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found 148 outliers - those will be ignored in fitting/regularization step</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Second step: Get residuals using fitted parameters for 18341 genes</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing corrected count matrix for 18341 genes</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Calculating gene attributes</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Wall clock passed: Time difference of 33.44526 secs</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Determine variable features</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Centering data matrix</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting residuals for block 1(of 2) for v3 dataset</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Getting residuals for block 2(of 2) for v3 dataset</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Centering data matrix</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Finished calculating residuals for v3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Centering data matrix
+Centering data matrix</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Set default assay to SCT</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb89"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">RunPCA</span>(obj, <span class="at">features =</span> <span class="fu">VariableFeatures</span>(<span class="at">object =</span> obj))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in PrepDR(object = object, features = features, verbose = verbose): The
+following 184 features requested have not been scaled (running reduction
+without them): IGHV3-30, TRBV7-9, IGHV3-21, IGHV4-34, IGHV4-39, IGLV1-40,
+IGLV3-25, TRBV6-6, TRBV12-3, TRBV4-1, IGHV2-5, TRBV12-4, IGLV2-23, TRBV7-3,
+TRBV11-2, IGHV5-51, IGHV1-18, IGKV1-8, IGLV3-1, TRBV6-5, IGHV4-59, IGLV3-21,
+TRBV30, IGLV1-47, TRBV5-4, TRDV2, TRBV5-6, IGHV3-11, TRBV29-1, TRBV7-6,
+IGLV3-19, TRBV2, IGKV1-9, TRBV6-1, TRBV13, AC233755.2, IGHV7-4-1, IGHV4-31,
+IGLV2-8, IGKV1-16, TRBV5-5, IGHV4-61, IGKV2-30, IGHV3-74, IGHV1-3, IGKV1-27,
+IGHV1-69D, IGHV6-1, IGHV3-49, IGHV2-26, IGLV8-61, IGLV4-69, TRBV27, IGHV1-46,
+IGKV1D-8, IGKV1-17, TRBV25-1, TRBV12-5, TRAV1-1, IGLV7-46, IGHV3-66, IGKV1-6,
+TRBV11-1, IGHV3-53, TRAV8-6, HBG2, IGKV3D-20, GP1BB, NIBAN3, IGHV1-24, CCL4L2,
+TRBV15, IGLV5-45, FAM129C, IGLV7-43, IGKV2-24, IGKV1D-39, IGLV3-16, TRBV7-7,
+IGKV2D-29, KRT5, TRAV8-1, IGKV1D-43, IGLV1-36, CXCL9, IGHV3-43, AC084033.3,
+TRBV6-4, IGLC1, IGLV3-10, IGHV3-73, TRAV35, IGKV1-39, TRBV23-1, IGKV3D-11,
+TRAV39, TRBV10-2, IGHV3-13, IGLV9-49, IGLV3-9, IGHV3-20, AL138963.4, IGLV10-54,
+MS4A2, IGHV2-70, IGLV2-18, PCED1B-AS1, TPSAB1, RARRES3, IGKV5-2, TLR9, SEPTIN5,
+IGHV5-78, AC253572.2, IGHV1-69, PRKCQ-AS1, GASK1B, FAM198B, GPR25, TRBV10-1,
+IGLVI-70, AES, AP002884.1, AL031777.3, PALM2-AKAP2, SEPT1, AC092821.3,
+TRBV11-3, AC119428.2, TPSB2, GIHCG, IGHV4-28, GPR15, AL357060.1, DOP1B, TRAV24,
+PLAAT4, AL021155.5, FAM153CP, NIBAN1, TLE5, FAM129A, IGKV2-29, LEF1-AS1,
+SEPT11, DENND10, SEPTIN1, MS4A3, AC097376.2, LINC00892, PLAAT3, AC245128.3,
+AC245407.2, C5orf56, PTPRCAP, AC073111.5, RESF1, SEPT6, LINC00963, NIBAN2,
+SATB1-AS1, PWAR6, TTTY15, AC011472.2, PLA2G16, GARS-DT, ITPRID2, GAS5,
+RBAK-RBAKDN, UPK3BL1, IATPR, SEPTIN11, C22orf46, AC127502.2, AL445686.2,
+SNHG14, AC008875.3, C19orf66, KIAA1147, CERT1, ATP5S, LINC01138, HIST1H3D, TUG1</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>PC_ 1 
+Positive:  S100A8, S100A9, LYZ, CST3, S100A12, FOS, VCAN, FTL, FCN1, TYROBP 
+       CTSS, S100A6, MNDA, IFI30, S100A4, LGALS1, AIF1, NEAT1, PSAP, FTH1 
+       DUSP1, CEBPD, FCER1G, TYMP, CD14, S100A11, LST1, SERPINA1, MS4A6A, COTL1 
+Negative:  RPS27, EEF1A1, RPS12, IL32, MALAT1, LTB, IL7R, NKG7, CCL5, RPL10 
+       RPS18, RPL13, RPS3, RPS27A, GNLY, KLRB1, RPL41, CD3E, RPS15A, RPS29 
+       GZMA, RPL32, RPL30, RPSA, RPL3, CTSW, RPS3A, CD3D, RPS25, IFITM1 
+PC_ 2 
+Positive:  NKG7, GNLY, GZMA, CCL5, PRF1, CST7, GZMB, KLRD1, FGFBP2, CTSW 
+       SPON2, KLRF1, KLRB1, HOPX, CLIC3, TRDC, GZMH, FCGR3A, IL2RB, CCL4 
+       ADGRG1, TBX21, GZMM, CD247, MATK, XCL2, CD7, CD160, PTGDR, KLRC1 
+Negative:  CD74, HLA-DRA, CD79A, MS4A1, IGHM, HLA-DRB1, TCL1A, IGKC, HLA-DPB1, HLA-DQA1 
+       HLA-DPA1, HLA-DQB1, CD79B, BANK1, LINC00926, IGHD, HLA-DRB5, FCER2, IGLC2, HLA-DQA2 
+       RALGPS2, SPIB, CD37, VPREB3, CD22, HLA-DMA, LTB, JCHAIN, AFF3, FCRLA 
+PC_ 3 
+Positive:  CD74, HLA-DRA, NKG7, GNLY, CD79A, MS4A1, HLA-DRB1, IGHM, GZMB, HLA-DPA1 
+       HLA-DPB1, HLA-DQA1, TCL1A, GZMA, PRF1, HLA-DQB1, IGKC, CST7, FGFBP2, KLRD1 
+       CCL5, SPON2, CLIC3, CD79B, FCGR3A, BANK1, HLA-DRB5, LINC00926, KLRF1, IGHD 
+Negative:  S100A8, S100A9, IL7R, RPS12, S100A12, EEF1A1, TCF7, CD3E, LDHB, TPT1 
+       CD3D, IL32, LEF1, CD3G, RPL32, RPS14, RPL34, RPL30, NOSIP, RPS15A 
+       TRAC, RPL13, RPS3A, RPS27, CD8B, MAL, VCAN, RPL39, CCR7, RPLP1 
+PC_ 4 
+Positive:  CST3, HLA-DPA1, HLA-DPB1, HLA-DRB1, HLA-DRA, FCER1A, FCGR3A, CLEC10A, LST1, AIF1 
+       FCER1G, HLA-DRB5, PLD4, PTCRA, CDKN1C, SAT1, CAVIN2, COTL1, PPBP, TUBB1 
+       RHOC, PRKAR2B, PF4, GNG11, IFI30, FTH1, MS4A7, LMNA, ACTB, CPVL 
+Negative:  S100A8, S100A9, IGHM, CD79A, MS4A1, S100A12, TCL1A, IGKC, IGHD, VCAN 
+       CD79B, LINC00926, BANK1, IGLC2, LYZ, FCER2, RALGPS2, GNLY, NKG7, VPREB3 
+       CD22, FOS, CD37, NCF1, PLPP5, TNFRSF13C, FCRL1, P2RX5, IGLC3, GZMA 
+PC_ 5 
+Positive:  PPBP, TUBB1, CAVIN2, GNG11, PF4, NRGN, CLU, GP9, SPARC, S100A8 
+       PRKAR2B, HIST1H2AC, MPIG6B, ODC1, CMTM5, PTCRA, RGS18, CCL5, TREML1, ACRBP 
+       TSC22D1, TMEM40, TUBA4A, MAP3K7CL, ITGA2B, MTURN, C2orf88, PDLIM1, LIMS1, S100A9 
+Negative:  CST3, HLA-DPA1, HLA-DRA, HLA-DPB1, HLA-DRB1, FCGR3A, FCER1A, AIF1, CLEC10A, HLA-DRB5 
+       LST1, HLA-DQB1, HLA-DQA1, IFI30, CD74, FCER1G, CDKN1C, COTL1, MS4A7, CPVL 
+       HLA-DQA2, ENHO, CD1C, PSAP, SMIM25, IFITM3, CSF1R, TCF7L2, LGALS1, SPI1 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb92"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb92-1"><a href="#cb92-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">IntegrateLayers</span>(</span>
+<span id="cb92-2"><a href="#cb92-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">object =</span> obj,  </span>
+<span id="cb92-3"><a href="#cb92-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">assay =</span> <span class="st">"SCT"</span>,</span>
+<span id="cb92-4"><a href="#cb92-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">"RPCAIntegration"</span>,</span>
+<span id="cb92-5"><a href="#cb92-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">normalization.method =</span> <span class="st">"SCT"</span>,</span>
+<span id="cb92-6"><a href="#cb92-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">orig.reduction =</span> <span class="st">"pca"</span>, </span>
+<span id="cb92-7"><a href="#cb92-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">new.reduction =</span> <span class="st">"integrated.rpca.sct"</span>,</span>
+<span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="compare-and-evaluate-integration-methods" class="level2">
+<h2 class="anchored" data-anchor-id="compare-and-evaluate-integration-methods">Compare and evaluate integration methods</h2>
+<p>At this point, you have applied a number of different integration methods to the data set, each of them storing their own integrated dimensionality reduction results under a different name in the same Seurat object.</p>
+<p>This gives you the opportunity to compare the various methods to each other, which is good practice to make sure that you end up using a method that is suitable for your own data set.</p>
+<p>In a simpler workflow, you could run just one method and carry on with it. However, you wouldn’t know how well this method perform without comparing it to another method.</p>
+<section id="clustering-and-dimensionality-reduction" class="level3">
+<h3 class="anchored" data-anchor-id="clustering-and-dimensionality-reduction">Clustering and dimensionality reduction</h3>
+<p>One way of rapidly visualising and assessing the overall performance of integration methods is to feed their output into a downstream workflow that consists of clustering and dimensionality reduction.</p>
+<p>In turn, those results can be visualised as scatter plots in reduced dimension coloured by batch and cluster labels.<br>
+A good integration method should bring biologically similar cells from various batches together in reduced dimensions, while keeping biologically distinct cell types apart.<br>
+However, expectations will largely depend on the nature of the experiment and the cellular composition of the batches being integrated, for instance.</p>
+<ul>
+<li>Use <code>FindNeighbors()</code> and <code>FindClusters()</code> to compute cluster labels on the data integrated using the CCA method.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Set the default assay back to <code>"RNA"</code>.</li>
+<li>For <code>FindNeighbors()</code>, set the arguments <code>reduction = "integrated.cca"</code> and <code>dims = 1:30</code>.</li>
+<li>You may also specify <code>assay = "RNA"</code> for extra clarity.</li>
+<li>For <code>FindClusters()</code>, set the arguments <code>resolution = 2</code> and <code>cluster.name = "cca_clusters"</code>.</li>
+<li>You may also specify <code>graph.name = "RNA_snn"</code> for extra clarity.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb93"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DefaultAssay</span>(obj) <span class="ot">&lt;-</span> <span class="st">"RNA"</span></span>
+<span id="cb93-2"><a href="#cb93-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb93-3"><a href="#cb93-3" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindNeighbors</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">reduction =</span> <span class="st">"integrated.cca"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing nearest neighbor graph</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing SNN</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb96"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb96-1"><a href="#cb96-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindClusters</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">resolution =</span> <span class="dv">2</span>, <span class="at">cluster.name =</span> <span class="st">"cca_clusters"</span>, <span class="at">graph.name =</span> <span class="st">"RNA_snn"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: The following arguments are not used: assay
+
+Warning: The following arguments are not used: assay</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
+
+Number of nodes: 17142
+Number of edges: 737658
+
+Running Louvain algorithm...
+Maximum modularity in 10 random starts: 0.8092
+Number of communities: 33
+Elapsed time: 5 seconds</code></pre>
+</div>
+</div>
+<ul>
+<li>Use <code>RunUMAP()</code> and <code>DimPlot()</code> to compute and display the UMAP layout of the data integrated using CCA coloured twice: once coloured by experiment, once coloured by cluster label.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>For <code>RunUMAP()</code>, set the arguments <code>reduction = "integrated.cca"</code>, <code>dims = 1:30</code>, and <code>reduction.name = "umap.cca"</code>.</li>
+<li>For <code>DimPlot()</code>, set the arguments <code>reduction = "umap.cca"</code>, <code>group.by = c("orig.ident", "cca_clusters")</code>, <code>combine = FALSE</code>, and <code>label.size = 2</code>.</li>
+<li>You may also specify <code>assay = "RNA"</code> for extra clarity.</li>
+<li>Assign the output of <code>DimPlot()</code> to a new object called <code>plots_cca</code> to capture it for displaying it later.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb99"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">reduction =</span> <span class="st">"integrated.cca"</span>, <span class="at">reduction.name =</span> <span class="st">"umap.cca"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:48:31 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:48:31 Read 17142 rows and found 30 numeric columns</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:48:31 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:48:31 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[----|----|----|----|----|----|----|----|----|----|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>**************************************************|
+12:48:34 Writing NN index file to temp file /project/.tmpRsessions/RtmpkYxuff/file3f93304e219c62
+12:48:34 Searching Annoy index using 1 thread, search_k = 3000
+12:48:43 Annoy recall = 100%
+12:48:44 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+12:48:46 Initializing from normalized Laplacian + noise (using RSpectra)
+12:48:48 Commencing optimization for 200 epochs, with 780236 positive edges
+12:48:59 Optimization finished</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb111"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a>plots_cca <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.cca"</span>, <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">"orig.ident"</span>, <span class="st">"cca_clusters"</span>), <span class="at">combine =</span> <span class="cn">FALSE</span>, <span class="at">label.size =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Use <code>wrap_plots()</code> to display the plots stored in the object <code>plots_cca</code>.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>The <code>wrap_plots()</code> function is implemented in the package <code>patchwork</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb112"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb112-1"><a href="#cb112-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wrap_plots</span>(plots_cca)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-22-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>Use <code>wrap_plots()</code> to display the plots in the object <code>plots_cca</code> alongside those in the object <code>plots_unintegrated</code>.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Use <code>c()</code> to combine the plots from the two objects.</li>
+<li>Use the argument <code>ncol = 2</code> to arrange the plots in a grid of two columns (one column for each object).</li>
+<li>Use the argument <code>byrow = FALSE</code> to fill the grid of plots by column (one column for each object).</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb113"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wrap_plots</span>(<span class="fu">c</span>(plots_unintegrated, plots_cca), <span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-23-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>Repeat the process of clustering and plotting for the other integration methods.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Use <code>FindNeighbors()</code> and <code>FindClusters()</code> to compute cluster labels on the data integrated using each method.</li>
+<li>Use <code>RunUMAP()</code> and <code>DimPlot()</code> to compute and display the UMAP layout of the data integrated using each method twice: once coloured by experiment, once coloured by cluster label.</li>
+<li>Assign each output of <code>DimPlot()</code> to a new, unique, object name.</li>
+<li>Use <code>wrap_plots()</code> to display the plots in each object alongside those in the object <code>plots_unintegrated</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a><span class="co"># RPCA example</span></span>
+<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindNeighbors</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">reduction =</span> <span class="st">"integrated.rpca"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing nearest neighbor graph</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing SNN</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb117"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb117-1"><a href="#cb117-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindClusters</span>(<span class="at">object =</span> obj, <span class="at">resolution =</span> <span class="dv">2</span>, <span class="at">cluster.name =</span> <span class="st">"rpca_clusters"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
+
+Number of nodes: 17142
+Number of edges: 673058
+
+Running Louvain algorithm...
+Maximum modularity in 10 random starts: 0.8154
+Number of communities: 33
+Elapsed time: 3 seconds</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb119"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb119-1"><a href="#cb119-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">reduction =</span> <span class="st">"integrated.rpca"</span>, <span class="at">reduction.name =</span> <span class="st">"umap.rpca"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:49:14 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:49:14 Read 17142 rows and found 30 numeric columns</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:49:14 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:49:14 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[----|----|----|----|----|----|----|----|----|----|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>**************************************************|
+12:49:17 Writing NN index file to temp file /project/.tmpRsessions/RtmpkYxuff/file3f93306ea4278d
+12:49:17 Searching Annoy index using 1 thread, search_k = 3000
+12:49:26 Annoy recall = 100%
+12:49:26 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+12:49:28 Initializing from normalized Laplacian + noise (using RSpectra)
+12:49:30 Commencing optimization for 200 epochs, with 770268 positive edges
+12:49:40 Optimization finished</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb131"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a>plots_rpca <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.rpca"</span>, <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">"orig.ident"</span>, <span class="st">"rpca_clusters"</span>), <span class="at">combine =</span> <span class="cn">FALSE</span>, <span class="at">label.size =</span> <span class="dv">2</span>)</span>
+<span id="cb131-2"><a href="#cb131-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb131-3"><a href="#cb131-3" aria-hidden="true" tabindex="-1"></a><span class="fu">wrap_plots</span>(<span class="fu">c</span>(plots_unintegrated, plots_rpca), <span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-24-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb132"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Harmony </span></span>
+<span id="cb132-2"><a href="#cb132-2" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindNeighbors</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">reduction =</span> <span class="st">"harmony"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing nearest neighbor graph</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing SNN</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb135"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindClusters</span>(<span class="at">object =</span> obj, <span class="at">resolution =</span> <span class="dv">2</span>, <span class="at">cluster.name =</span> <span class="st">"harmony_clusters"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
+
+Number of nodes: 17142
+Number of edges: 652883
+
+Running Louvain algorithm...
+Maximum modularity in 10 random starts: 0.8110
+Number of communities: 31
+Elapsed time: 3 seconds</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb137"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">reduction =</span> <span class="st">"harmony"</span>, <span class="at">reduction.name =</span> <span class="st">"umap.harmony"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:49:54 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:49:54 Read 17142 rows and found 30 numeric columns</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:49:54 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:49:54 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[----|----|----|----|----|----|----|----|----|----|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>**************************************************|
+12:49:57 Writing NN index file to temp file /project/.tmpRsessions/RtmpkYxuff/file3f93304efe7623
+12:49:57 Searching Annoy index using 1 thread, search_k = 3000
+12:50:06 Annoy recall = 100%
+12:50:07 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+12:50:09 Initializing from normalized Laplacian + noise (using RSpectra)
+12:50:11 Commencing optimization for 200 epochs, with 765540 positive edges
+12:50:21 Optimization finished</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb149"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb149-1"><a href="#cb149-1" aria-hidden="true" tabindex="-1"></a>plots_harmony <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.harmony"</span>, <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">"orig.ident"</span>, <span class="st">"harmony_clusters"</span>), <span class="at">combine =</span> <span class="cn">FALSE</span>, <span class="at">label.size =</span> <span class="dv">2</span>)</span>
+<span id="cb149-2"><a href="#cb149-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-3"><a href="#cb149-3" aria-hidden="true" tabindex="-1"></a><span class="fu">wrap_plots</span>(<span class="fu">c</span>(plots_unintegrated, plots_harmony), <span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-25-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb150"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb150-1"><a href="#cb150-1" aria-hidden="true" tabindex="-1"></a><span class="co">#integrated.mnn </span></span>
+<span id="cb150-2"><a href="#cb150-2" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindNeighbors</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">reduction =</span> <span class="st">"integrated.mnn"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing nearest neighbor graph</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing SNN</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb153"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb153-1"><a href="#cb153-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindClusters</span>(<span class="at">object =</span> obj, <span class="at">resolution =</span> <span class="dv">2</span>, <span class="at">cluster.name =</span> <span class="st">"mnn_clusters"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
+
+Number of nodes: 17142
+Number of edges: 616609
+
+Running Louvain algorithm...
+Maximum modularity in 10 random starts: 0.8155
+Number of communities: 32
+Elapsed time: 4 seconds</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb155"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb155-1"><a href="#cb155-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"RNA"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">reduction =</span> <span class="st">"integrated.mnn"</span>, <span class="at">reduction.name =</span> <span class="st">"umap.mnn"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:50:35 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:50:35 Read 17142 rows and found 30 numeric columns</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:50:35 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:50:35 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[----|----|----|----|----|----|----|----|----|----|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>**************************************************|
+12:50:38 Writing NN index file to temp file /project/.tmpRsessions/RtmpkYxuff/file3f933028810229
+12:50:38 Searching Annoy index using 1 thread, search_k = 3000
+12:50:47 Annoy recall = 100%
+12:50:48 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+12:50:50 Initializing from normalized Laplacian + noise (using RSpectra)
+12:50:51 Commencing optimization for 200 epochs, with 765154 positive edges
+12:51:02 Optimization finished</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb167"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb167-1"><a href="#cb167-1" aria-hidden="true" tabindex="-1"></a>plots_mnn <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.mnn"</span>, <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">"orig.ident"</span>, <span class="st">"mnn_clusters"</span>), <span class="at">combine =</span> <span class="cn">FALSE</span>, <span class="at">label.size =</span> <span class="dv">2</span>)</span>
+<span id="cb167-2"><a href="#cb167-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb167-3"><a href="#cb167-3" aria-hidden="true" tabindex="-1"></a><span class="fu">wrap_plots</span>(<span class="fu">c</span>(plots_unintegrated, plots_mnn), <span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-26-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Set the default assay back to <code>"SCT"</code> before trying to analyse the sctransform-normalised data.</li>
+<li>You may also specify <code>assay = "SCT"</code> for extra clarity.</li>
+<li>You may also specify <code>graph.name = "SCT_snn"</code> for extra clarity.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb168"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb168-1"><a href="#cb168-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DefaultAssay</span>(obj) <span class="ot">=</span> <span class="st">"SCT"</span></span>
+<span id="cb168-2"><a href="#cb168-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb168-3"><a href="#cb168-3" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindNeighbors</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"SCT"</span>, <span class="at">reduction =</span> <span class="st">"integrated.rpca.sct"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing nearest neighbor graph</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Computing SNN</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb171"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb171-1"><a href="#cb171-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">FindClusters</span>(<span class="at">object =</span> obj, <span class="at">resolution =</span> <span class="dv">2</span>, <span class="at">cluster.name =</span> <span class="st">"rcpa_sct_clusters"</span>, <span class="at">graph.name =</span> <span class="st">"SCT_snn"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Modularity Optimizer version 1.3.0 by Ludo Waltman and Nees Jan van Eck
+
+Number of nodes: 17142
+Number of edges: 606130
+
+Running Louvain algorithm...
+Maximum modularity in 10 random starts: 0.8369
+Number of communities: 40
+Elapsed time: 4 seconds</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb173"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb173-1"><a href="#cb173-1" aria-hidden="true" tabindex="-1"></a>obj <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(<span class="at">object =</span> obj, <span class="at">assay =</span> <span class="st">"SCT"</span>, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="at">reduction =</span> <span class="st">"integrated.rpca.sct"</span>, <span class="at">reduction.name =</span> <span class="st">"umap.rcpa.sct"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:51:15 UMAP embedding parameters a = 0.9922 b = 1.112</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:51:15 Read 17142 rows and found 30 numeric columns</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:51:15 Using Annoy for neighbor search, n_neighbors = 30</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Found more than one class "dist" in cache; using the first, from namespace 'spam'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Also defined by 'BiocGenerics'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>12:51:15 Building Annoy index with metric = cosine, n_trees = 50</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>0%   10   20   30   40   50   60   70   80   90   100%</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>[----|----|----|----|----|----|----|----|----|----|</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>**************************************************|
+12:51:19 Writing NN index file to temp file /project/.tmpRsessions/RtmpkYxuff/file3f93302c80386e
+12:51:19 Searching Annoy index using 1 thread, search_k = 3000
+12:51:28 Annoy recall = 100%
+12:51:29 Commencing smooth kNN distance calibration using 1 thread with target n_neighbors = 30
+12:51:31 Initializing from normalized Laplacian + noise (using RSpectra)
+12:51:32 Commencing optimization for 200 epochs, with 719950 positive edges
+12:51:43 Optimization finished</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb185"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb185-1"><a href="#cb185-1" aria-hidden="true" tabindex="-1"></a>plots_rcpa_sct <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.rcpa.sct"</span>, <span class="at">group.by =</span> <span class="fu">c</span>(<span class="st">"orig.ident"</span>, <span class="st">"rcpa_sct_clusters"</span>), <span class="at">combine =</span> <span class="cn">FALSE</span>, <span class="at">label.size =</span> <span class="dv">2</span>)</span>
+<span id="cb185-2"><a href="#cb185-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb185-3"><a href="#cb185-3" aria-hidden="true" tabindex="-1"></a><span class="fu">wrap_plots</span>(<span class="fu">c</span>(plots_unintegrated, plots_rcpa_sct), <span class="at">ncol =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-27-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>Use <code>wrap_plots()</code> to display the plots stored in all the objects <code>plots_unintegrated</code>, <code>plots_cca</code>, <code>plots_harmony</code>, and <code>plots_mnn</code>, in a grid of four columns.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb186"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb186-1"><a href="#cb186-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wrap_plots</span>(<span class="fu">c</span>(plots_unintegrated, plots_cca, plots_harmony, plots_mnn), <span class="at">ncol =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-28-1.svg" class="img-fluid figure-img" width="1344"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="marker-gene-expression" class="level3">
+<h3 class="anchored" data-anchor-id="marker-gene-expression">Marker gene expression</h3>
+<p>Another angle from which integration results can be inspected is the expression of reliable marker genes in the clusters identified downstream of each integration method.</p>
+<p>However, note that those clusters are not purely direct results of the integration methods, but in this case also depend on the parameters of <code>FindNeighbors()</code> and <code>FindClusters()</code>, which may complicate their fair comparison and require some level of fine-tuning to refine the clustering results.</p>
+<ul>
+<li>Use <code>VlnPlot()</code>, <code>NoLegend()</code>, and <code>ggtitle()</code> to visualise the expression of the gene “CD8A” across each set of clusters (after each integration method as well as the unintegrated clusters).</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Use <code>VlnPlot()</code> once for each set of clusters: “unintegrated_clusters”, “cca_clusters”, “harmony_clusters”, “mnn_clusters”.</li>
+<li>Assign each output of <code>VlnPlot()</code> to a new unique object name, to capture it for displaying it again later.</li>
+<li>Use the argument <code>features = "CD8A"</code> to specify the name of the gene for which to visualise the expression level on the Y-axis.</li>
+<li>Use the argument <code>group.by =</code> to specify the set of clusters to visualise in each plot.</li>
+<li>Use <code>+ NoLegend()</code> to remove legends from the plot produced by <code>VlnPlot()</code>.</li>
+<li>Use <code>+ ggtitle()</code> to add a unique title to each plot produced by <code>VlnPlot()</code>.</li>
+<li>Note that <code>ggtitle()</code> is implemented in the package <code>ggplot2</code>.</li>
+<li>Use the <code>|</code> operator (from the <code>patchwork</code> package) to pack all the plots into a single line (see <code>?plot_arithmetic</code> and <a href="https://patchwork.data-imaginist.com/articles/guides/assembly.html#stacking-and-packing">Stacking and packing</a>).</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb187"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb187-1"><a href="#cb187-1" aria-hidden="true" tabindex="-1"></a><span class="fu">DefaultAssay</span>(obj) <span class="ot">&lt;-</span> <span class="st">"RNA"</span></span>
+<span id="cb187-2"><a href="#cb187-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb187-3"><a href="#cb187-3" aria-hidden="true" tabindex="-1"></a>vln_unintegrated <span class="ot">&lt;-</span> <span class="fu">VlnPlot</span>(obj, <span class="at">features =</span> <span class="st">"CD8A"</span>, <span class="at">group.by =</span> <span class="st">"unintegrated_clusters"</span> ) <span class="sc">+</span></span>
+<span id="cb187-4"><a href="#cb187-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">NoLegend</span>() <span class="sc">+</span></span>
+<span id="cb187-5"><a href="#cb187-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"CD8A - Unintegrated Clusters"</span>)</span>
+<span id="cb187-6"><a href="#cb187-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb187-7"><a href="#cb187-7" aria-hidden="true" tabindex="-1"></a>vln_cca <span class="ot">&lt;-</span> <span class="fu">VlnPlot</span>(obj, <span class="at">features =</span> <span class="st">"CD8A"</span>, <span class="at">group.by =</span> <span class="st">"cca_clusters"</span> ) <span class="sc">+</span></span>
+<span id="cb187-8"><a href="#cb187-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">NoLegend</span>() <span class="sc">+</span></span>
+<span id="cb187-9"><a href="#cb187-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"CD8A - CCA Clusters"</span>)</span>
+<span id="cb187-10"><a href="#cb187-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb187-11"><a href="#cb187-11" aria-hidden="true" tabindex="-1"></a>vln_harmony <span class="ot">&lt;-</span> <span class="fu">VlnPlot</span>(obj, <span class="at">features =</span> <span class="st">"CD8A"</span>, <span class="at">group.by =</span> <span class="st">"harmony_clusters"</span> ) <span class="sc">+</span></span>
+<span id="cb187-12"><a href="#cb187-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">NoLegend</span>() <span class="sc">+</span></span>
+<span id="cb187-13"><a href="#cb187-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"CD8A - Harmony Clusters"</span>)</span>
+<span id="cb187-14"><a href="#cb187-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb187-15"><a href="#cb187-15" aria-hidden="true" tabindex="-1"></a>vln_mnn <span class="ot">&lt;-</span> <span class="fu">VlnPlot</span>(obj, <span class="at">features =</span> <span class="st">"CD8A"</span>, <span class="at">group.by =</span> <span class="st">"mnn_clusters"</span> ) <span class="sc">+</span></span>
+<span id="cb187-16"><a href="#cb187-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">NoLegend</span>() <span class="sc">+</span></span>
+<span id="cb187-17"><a href="#cb187-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"CD8A - MNN Clusters"</span>)</span>
+<span id="cb187-18"><a href="#cb187-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb187-19"><a href="#cb187-19" aria-hidden="true" tabindex="-1"></a>vln_unintegrated <span class="sc">|</span> vln_cca <span class="sc">|</span> vln_harmony <span class="sc">|</span> vln_mnn</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-29-1.svg" class="img-fluid figure-img" width="1920"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="visualising-information-combined-across-integration-methods" class="level3">
+<h3 class="anchored" data-anchor-id="visualising-information-combined-across-integration-methods">Visualising information combined across integration methods</h3>
+<p>As all of the information produced by the various integration methods is stored in the same Seurat object, it is possible to produce figures that visualise information combined across integration methods.</p>
+<p>For instance, the clustering results obtained using integration methods may be used to colour scatter plots of cells in dimensionality reduction results produced by any of the other integration methods, including unintegrated data.</p>
+<p>Conversely, the dimensionality reduction result obtained using one of the integration methods may be coloured by the set of clustering results obtained by each of the integration methods.</p>
+<p>This can be used to visually assess the agreement between the various integration methods, using dimensionality reduction as a proxy for clustering for one integration method, and colouring for the other integration method.</p>
+<ul>
+<li>Use <code>DimPlot()</code> to display the set of clusters obtained using CCA integration on the UMAP layout obtained using each of the integration methods.</li>
+</ul>
+<p><strong>Hint:</strong></p>
+<ul>
+<li>Use <code>Idents()</code> to set the identity of cells to “cca_clusters”.</li>
+<li>Use <code>DimPlot()</code> once for each UMAP layout: “umap.unintegrated”, “umap.cca”, “umap.rpca”, “umap.harmony”, and “umap.mnn”.</li>
+<li>Assign each output of <code>DimPlot()</code> to a new unique object name, to capture it for displaying it again later.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb188"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb188-1"><a href="#cb188-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Idents</span>(obj) <span class="ot">&lt;-</span> <span class="st">"cca_clusters"</span></span>
+<span id="cb188-2"><a href="#cb188-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb188-3"><a href="#cb188-3" aria-hidden="true" tabindex="-1"></a>umap_unintegrated_cca <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.unintegrated"</span>, <span class="at">label.size =</span> <span class="dv">2</span> )</span>
+<span id="cb188-4"><a href="#cb188-4" aria-hidden="true" tabindex="-1"></a>umap_cca_cca <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.cca"</span>, <span class="at">label.size =</span> <span class="dv">2</span> )</span>
+<span id="cb188-5"><a href="#cb188-5" aria-hidden="true" tabindex="-1"></a>umap_rpca_cca <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.rpca"</span>, <span class="at">label.size =</span> <span class="dv">2</span> )</span>
+<span id="cb188-6"><a href="#cb188-6" aria-hidden="true" tabindex="-1"></a>umap_harmony_cca <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.harmony"</span>, <span class="at">label.size =</span> <span class="dv">2</span> )</span>
+<span id="cb188-7"><a href="#cb188-7" aria-hidden="true" tabindex="-1"></a>umap_mnn_cca <span class="ot">&lt;-</span> <span class="fu">DimPlot</span>(obj, <span class="at">reduction =</span> <span class="st">"umap.mnn"</span>, <span class="at">label.size =</span> <span class="dv">2</span> )</span>
+<span id="cb188-8"><a href="#cb188-8" aria-hidden="true" tabindex="-1"></a>umap_unintegrated_cca <span class="sc">|</span> umap_cca_cca <span class="sc">|</span> umap_rpca_cca <span class="sc">|</span> umap_harmony_cca <span class="sc">|</span> umap_mnn_cca</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-30-1.svg" class="img-fluid figure-img" width="1920"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="quantitively-compare-with-lisi" class="level3">
+<h3 class="anchored" data-anchor-id="quantitively-compare-with-lisi">Quantitively compare with LISI</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb189"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb189-1"><a href="#cb189-1" aria-hidden="true" tabindex="-1"></a>reduction_names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"pca"</span>, <span class="st">"integrated.cca"</span>, <span class="st">"integrated.rpca"</span>, <span class="st">"harmony"</span>, </span>
+<span id="cb189-2"><a href="#cb189-2" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"integrated.mnn"</span>, <span class="st">"integrated.rpca.sct"</span>)</span>
+<span id="cb189-3"><a href="#cb189-3" aria-hidden="true" tabindex="-1"></a>batch_variable <span class="ot">&lt;-</span> <span class="st">"orig.ident"</span></span>
+<span id="cb189-4"><a href="#cb189-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb189-5"><a href="#cb189-5" aria-hidden="true" tabindex="-1"></a>median_lisi <span class="ot">&lt;-</span> <span class="fu">vapply</span>(reduction_names, <span class="at">USE.NAMES =</span> <span class="cn">TRUE</span>, <span class="at">FUN.VALUE =</span> <span class="fu">numeric</span>(<span class="dv">1</span>), </span>
+<span id="cb189-6"><a href="#cb189-6" aria-hidden="true" tabindex="-1"></a>                      <span class="at">FUN =</span> <span class="cf">function</span>(reduction) {</span>
+<span id="cb189-7"><a href="#cb189-7" aria-hidden="true" tabindex="-1"></a>  lisi_mx <span class="ot">&lt;-</span> lisi<span class="sc">::</span><span class="fu">compute_lisi</span>(<span class="fu">Embeddings</span>(obj, reduction), <span class="at">meta_data =</span> obj[[]], </span>
+<span id="cb189-8"><a href="#cb189-8" aria-hidden="true" tabindex="-1"></a>                                <span class="at">label_colnames =</span> batch_variable)</span>
+<span id="cb189-9"><a href="#cb189-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">median</span>(lisi_mx[,<span class="dv">1</span>]))</span>
+<span id="cb189-10"><a href="#cb189-10" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb190"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb190-1"><a href="#cb190-1" aria-hidden="true" tabindex="-1"></a>median_lisi_tidy <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb190-2"><a href="#cb190-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">reduction =</span> <span class="fu">factor</span>(<span class="fu">names</span>(median_lisi), <span class="at">levels =</span> reduction_names),</span>
+<span id="cb190-3"><a href="#cb190-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">median_lisi =</span> median_lisi) <span class="sc">%&gt;%</span> </span>
+<span id="cb190-4"><a href="#cb190-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(median_lisi))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb191"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb191-1"><a href="#cb191-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(median_lisi_tidy, </span>
+<span id="cb191-2"><a href="#cb191-2" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="fu">reorder</span>(reduction, median_lisi, <span class="at">decreasing =</span> <span class="cn">TRUE</span>), median_lisi)) <span class="sc">+</span></span>
+<span id="cb191-3"><a href="#cb191-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb191-4"><a href="#cb191-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Integration method"</span>, <span class="at">y =</span> <span class="st">"Median lisi"</span>) <span class="sc">+</span></span>
+<span id="cb191-5"><a href="#cb191-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_classic</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_Integration_files/figure-html/unnamed-chunk-33-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb192"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb192-1"><a href="#cb192-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>R version 4.3.0 (2023-04-21)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 22.04.5 LTS
+
+Matrix products: default
+BLAS:   /package/R-base/4.3.0/lib/R/lib/libRblas.so 
+LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/liblapack.so.3;  LAPACK version 3.10.0
+
+locale:
+ [1] LC_CTYPE=en_GB.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_GB.UTF-8        LC_COLLATE=en_GB.UTF-8    
+ [5] LC_MONETARY=en_GB.UTF-8    LC_MESSAGES=en_GB.UTF-8   
+ [7] LC_PAPER=en_GB.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       
+
+time zone: Europe/London
+tzcode source: system (glibc)
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] dplyr_1.1.3          ggplot2_3.5.1        patchwork_1.2.0     
+[4] SeuratWrappers_0.3.5 Seurat_5.1.0         SeuratObject_5.0.2  
+[7] sp_2.0-0            
+
+loaded via a namespace (and not attached):
+  [1] RcppAnnoy_0.0.21            splines_4.3.0              
+  [3] later_1.3.1                 batchelor_1.16.0           
+  [5] bitops_1.0-7                tibble_3.2.1               
+  [7] R.oo_1.25.0                 polyclip_1.10-4            
+  [9] fastDummies_1.7.3           lifecycle_1.0.3            
+ [11] globals_0.16.2              lattice_0.21-8             
+ [13] MASS_7.3-58.4               magrittr_2.0.3             
+ [15] plotly_4.10.2               rmarkdown_2.24             
+ [17] yaml_2.3.7                  remotes_2.4.2.1            
+ [19] httpuv_1.6.11               glmGamPoi_1.12.2           
+ [21] sctransform_0.4.1           spam_2.9-1                 
+ [23] spatstat.sparse_3.0-2       reticulate_1.31            
+ [25] cowplot_1.1.1               pbapply_1.7-2              
+ [27] RColorBrewer_1.1-3          ResidualMatrix_1.10.0      
+ [29] zlibbioc_1.46.0             abind_1.4-5                
+ [31] Rtsne_0.16                  GenomicRanges_1.52.0       
+ [33] purrr_1.0.2                 R.utils_2.12.2             
+ [35] BiocGenerics_0.46.0         RCurl_1.98-1.12            
+ [37] GenomeInfoDbData_1.2.10     IRanges_2.34.1             
+ [39] S4Vectors_0.38.2            ggrepel_0.9.3              
+ [41] irlba_2.3.5.1               listenv_0.9.0              
+ [43] spatstat.utils_3.0-3        goftest_1.2-3              
+ [45] RSpectra_0.16-1             spatstat.random_3.1-5      
+ [47] fitdistrplus_1.1-11         parallelly_1.36.0          
+ [49] DelayedMatrixStats_1.22.6   leiden_0.4.3               
+ [51] codetools_0.2-19            DelayedArray_0.26.7        
+ [53] scuttle_1.10.2              tidyselect_1.2.0           
+ [55] farver_2.1.1                ScaledMatrix_1.8.1         
+ [57] matrixStats_1.0.0           stats4_4.3.0               
+ [59] spatstat.explore_3.2-1      jsonlite_1.8.7             
+ [61] BiocNeighbors_1.18.0        ellipsis_0.3.2             
+ [63] progressr_0.14.0            ggridges_0.5.4             
+ [65] survival_3.5-5              tools_4.3.0                
+ [67] ica_1.0-3                   Rcpp_1.0.11                
+ [69] glue_1.6.2                  gridExtra_2.3              
+ [71] xfun_0.40                   MatrixGenerics_1.12.3      
+ [73] GenomeInfoDb_1.36.2         withr_2.5.0                
+ [75] BiocManager_1.30.25         fastmap_1.1.1              
+ [77] fansi_1.0.4                 digest_0.6.33              
+ [79] rsvd_1.0.5                  R6_2.5.1                   
+ [81] mime_0.12                   colorspace_2.1-0           
+ [83] scattermore_1.2             tensor_1.5                 
+ [85] spatstat.data_3.0-1         R.methodsS3_1.8.2          
+ [87] utf8_1.2.3                  tidyr_1.3.0                
+ [89] generics_0.1.3              data.table_1.14.8          
+ [91] httr_1.4.7                  htmlwidgets_1.6.2          
+ [93] S4Arrays_1.2.1              uwot_0.1.16                
+ [95] pkgconfig_2.0.3             gtable_0.3.4               
+ [97] lmtest_0.9-40               SingleCellExperiment_1.22.0
+ [99] XVector_0.40.0              htmltools_0.5.6            
+[101] dotCall64_1.0-2             Biobase_2.60.0             
+[103] scales_1.3.0                png_0.1-8                  
+[105] lisi_1.0                    harmony_0.1.1              
+[107] knitr_1.43                  rstudioapi_0.15.0          
+[109] reshape2_1.4.4              nlme_3.1-162               
+[111] zoo_1.8-12                  stringr_1.5.0              
+[113] KernSmooth_2.23-20          vipor_0.4.5                
+[115] parallel_4.3.0              miniUI_0.1.1.1             
+[117] ggrastr_1.0.2               pillar_1.9.0               
+[119] grid_4.3.0                  vctrs_0.6.3                
+[121] RANN_2.6.1                  promises_1.2.1             
+[123] BiocSingular_1.16.0         beachmat_2.16.0            
+[125] xtable_1.8-4                cluster_2.1.4              
+[127] beeswarm_0.4.0              evaluate_0.21              
+[129] cli_3.6.1                   compiler_4.3.0             
+[131] rlang_1.1.4                 crayon_1.5.2               
+[133] future.apply_1.11.0         labeling_0.4.3             
+[135] ggbeeswarm_0.7.2            plyr_1.8.8                 
+[137] stringi_1.7.12              viridisLite_0.4.2          
+[139] deldir_1.0-9                BiocParallel_1.34.2        
+[141] munsell_0.5.0               lazyeval_0.2.2             
+[143] spatstat.geom_3.2-4         Matrix_1.6-5               
+[145] RcppHNSW_0.4.1              sparseMatrixStats_1.12.2   
+[147] future_1.33.0               shiny_1.7.5                
+[149] SummarizedExperiment_1.30.2 ROCR_1.0-11                
+[151] igraph_1.5.1               </code></pre>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

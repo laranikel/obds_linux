@@ -1,0 +1,525 @@
+---
+title: "Template: Single-cell integration"
+author: "Kevin Rue-Albrecht & Liezel Tamon (modified by Lucy Garner)"
+date: "2025-05-30"
+---
+
+```{r}
+#| label: load-packages
+#| include: false
+library(Seurat)
+library(SeuratWrappers)
+library(patchwork)
+library(ggplot2)
+library(dplyr)
+```
+
+## Preamble
+
+Refer to the vignette [Integrative analysis in Seurat v5](https://satijalab.org/seurat/articles/seurat5_integration#perform-streamlined-one-line-integrative-analysis) for guidance throughout the workflow.
+Some of the functions required for this workflow are only mentioned in this vignette and not documented in the Seurat package itself.
+
+## Import data sets to integrate
+
+- Use `readRDS()` to import two prefiltered PBMC data sets from the files `pbmcv2_filtered.rds` and `pbmcv3_filtered.rds`.
+- Name the R objects `pbmcv2` and `pbmcv3`.
+
+```{r}
+pbmcv2 <- readRDS("/project/shared/r/2_r_single_cell/3-integration/pbmcv2_filtered.rds")
+
+pbmcv3 <- readRDS("/project/shared/r/2_r_single_cell/3-integration/pbmcv3_filtered.rds")
+
+```
+
+Those RDS files contain objects that have been preprocessed through quality control and filtering, as demonstrated in the Seurat day 1 lesson.
+
+## Prepare the data sets for integration
+
+- Use `merge()` to combine the two Seurat objects into a single object named `obj`.
+
+```{r}
+obj <- merge(pbmcv2, pbmcv3)
+```
+
+In previous versions of Seurat, the integration workflow would have required the data to be represented as distinct Seurat objects.  
+When using Seurat version 5 assays, we can instead keep all the data in one object, but simply split the layers.
+
+- Display the merged Seurat object.
+
+```{r}
+obj
+
+```
+
+**How do you interpret the "layer" information?**
+
+> Answer:  
+> 
+> 
+
+## Integration without correction
+
+- Use the functions `NormalizeData()`, `FindVariableFeatures()`, `ScaleData()`, and `RunPCA()` to performed a standard Seurat analysis without integration.
+
+```{r}
+obj <- NormalizeData(object = obj, 
+              normalization.method = 'LogNormalize')
+
+obj <- FindVariableFeatures(object = obj, selection.method = "vst", nfeatures = 2000)
+
+obj <- ScaleData(object = obj, vars.to.regress = "percent_mt")
+
+obj <- RunPCA(obj, features = VariableFeatures(object = obj))
+
+
+```
+
+
+- Use the functions `FindNeighbors()` and `FindClusters()` to compute cluster labels.
+
+**Hint:**
+
+- For `FindNeighbors()`, use arguments `dims = 1:30` and `reduction = "pca"`.
+- For `FindClusters()`, use arguments `resolution = 2`, `cluster.name = "unintegrated_clusters"`.
+
+```{r}
+obj <- FindNeighbors(object = obj, reduction = "pca", dims = 1:30)
+
+obj <- FindClusters(object = obj, resolution = 2, cluster.name = "unintegrated_clusters" )
+
+
+```
+
+- Use `table()` to tabulate the number of cells in each cluster.
+
+```{r}
+table(obj$unintegrated_clusters)
+
+table(obj$seurat_clusters)
+```
+
+- Use `RunUMAP()` to compute a UMAP layout.
+
+**Hint:**
+
+- Use argument `dims = 1:30`, to match the number of principal components used for clustering.
+- Use argument `reduction = "pca"`, to match the input data used for clustering.
+- Use argument `reduction.name = "umap.unintegrated"`, to distinguish this UMAP from the ones we will compute later with integration.
+
+```{r}
+obj <- RunUMAP(object = obj, dims = 1:30, reduction = "pca", reduction.name = "umap.unintegrated")
+```
+
+- Use `DimPlot()` to display the unintegrated UMAP layout.
+
+**Hint:**
+
+- Use the argument `group.by = c("orig.ident", "unintegrated_clusters")` to colour by experiment and by cluster without integration.
+- Use the argument `combine = FALSE` to receive a list of `ggplot` objects rather than a combined plot.
+- Assign the output of `DimPlot()` to an object called `plots_unintegrated`, to capture it for displaying it again later.
+- Use `wrap_plots()` -- from the `cowplot` package -- to display the list of plots in `plots_unintegrated`.
+
+```{r}
+plots_unintegrated <- DimPlot(obj, reduction = "umap.unintegrated", group.by = c("orig.ident", "unintegrated_clusters"), combine = FALSE )
+
+wrap_plots(plots_unintegrated)
+```
+
+## One-line integration using Seurat v5
+
+Refer to the section [Perform streamlined (one-line) integrative analysis](https://satijalab.org/seurat/articles/seurat5_integration#perform-streamlined-one-line-integrative-analysis) in the Seurat vignette.
+
+- Display the Seurat object one more time before performing any integration. This summarised view of the Seurat object will be useful to compare with later versions of the object after performing integration using different methods.
+
+```{r}
+obj
+```
+
+- Use `IntegrateLayers()` to perform integration using the `CCAIntegration` method.
+
+**Hint:**
+
+- Set the argument `orig.reduction = "pca"` to specify the dimensionality reduction to use for correction.
+- Set the argument `new.reduction = "integrated.cca"` to specify the name of the new integrated dimensionality reduction result to create.
+- Set the argument `verbose = FALSE` to suppress messages otherwise displayed during the execution of the function.
+
+```{r}
+
+
+obj <- IntegrateLayers(
+  object = obj, method = "CCAIntegration",
+  orig.reduction = "pca", new.reduction = "integrated.cca",
+  verbose = FALSE
+)
+```
+
+- Display the Seurat object.
+
+```{r}
+obj
+```
+
+**Note:**
+
+You should see a new dimensionality reduction result called `integrated.cca`.
+
+- Use `IntegrateLayers()` to perform integration using the `RPCAIntegration` method.
+
+**Hint:**
+
+- Set the argument `orig.reduction = "pca"` to specify the dimensionality reduction to use for correction.
+- Set the argument `new.reduction = "integrated.rpca"` to specify the name of the new integrated dimensionality reduction result to create.
+- Set the argument `verbose = FALSE` to suppress messages otherwise displayed during the execution of the function.
+
+```{r}
+obj <- IntegrateLayers(
+  object = obj, method = "RPCAIntegration",
+  orig.reduction = "pca", new.reduction = "integrated.rpca",
+  verbose = FALSE)
+```
+
+- Display the Seurat object.
+
+```{r}
+obj
+```
+
+**Note:**
+
+You should see a new dimensionality reduction result called `integrated.rpca`.
+
+- Use `IntegrateLayers()` to perform integration using the `HarmonyIntegration` method.
+
+**Hint:**
+
+- Set the argument `orig.reduction = "pca"` to specify the dimensionality reduction to use for correction.
+- Set the argument `new.reduction = "harmony"` to specify the name of the new integrated dimensionality reduction result to create.
+- Set the argument `verbose = FALSE` to suppress messages otherwise displayed during the execution of the function.
+
+```{r}
+obj <- IntegrateLayers(
+  object = obj, method = "HarmonyIntegration",
+  orig.reduction = "pca", new.reduction = "harmony",
+  verbose = FALSE)
+```
+
+- Display the Seurat object.
+
+```{r}
+obj
+```
+
+**Note:**
+
+You should see a new dimensionality reduction result called `harmony`.
+
+- Use `IntegrateLayers()` to perform integration using the `FastMNNIntegration` method.
+
+**Hint:**
+
+- The `FastMNNIntegration` method requires the package `SeuratWrappers`.
+- Set the argument `new.reduction = "integrated.mnn"` to specify the name of the new integrated dimensionality reduction result to create.
+- Set the argument `verbose = FALSE` to suppress messages otherwise displayed during the execution of the function.
+
+```{r}
+
+obj <- IntegrateLayers(
+  object = obj, method = "FastMNNIntegration",
+  orig.reduction = "pca", new.reduction = "integrated.mnn",
+  verbose = FALSE)
+```
+
+- Display the Seurat object.
+
+```{r}
+obj
+```
+
+**Note:**
+
+You should see a new dimensionality reduction result called `integrated.mnn`.
+
+- Perform integration using sctransform-normalised data - remember to `RunPCA()` after `SCTransform()`.
+- Use the `RPCAIntegration` method.
+- Set the argument `new.reduction = "integrated.rpca.sct"`.
+
+```{r}
+options(future.globals.maxSize = 3e+09)
+
+obj <- SCTransform(obj, assay = "RNA")
+
+obj <- RunPCA(obj, features = VariableFeatures(object = obj))
+
+obj <- IntegrateLayers(
+  object = obj,  
+  assay = "SCT",
+  method = "RPCAIntegration",
+  normalization.method = "SCT",
+  orig.reduction = "pca", 
+  new.reduction = "integrated.rpca.sct",
+  verbose = FALSE)
+
+```
+
+## Compare and evaluate integration methods
+
+At this point, you have applied a number of different integration methods to the data set, each of them storing their own integrated dimensionality reduction results under a different name in the same Seurat object.
+
+This gives you the opportunity to compare the various methods to each other, which is good practice to make sure that you end up using a method that is suitable for your own data set.
+
+In a simpler workflow, you could run just one method and carry on with it.
+However, you wouldn't know how well this method perform without comparing it to another method.
+
+### Clustering and dimensionality reduction
+
+One way of rapidly visualising and assessing the overall performance of integration methods is to feed their output into a downstream workflow that consists of clustering and dimensionality reduction.
+
+In turn, those results can be visualised as scatter plots in reduced dimension coloured by batch and cluster labels.  
+A good integration method should bring biologically similar cells from various batches together in reduced dimensions, while keeping biologically distinct cell types apart.  
+However, expectations will largely depend on the nature of the experiment and the cellular composition of the batches being integrated, for instance.
+
+- Use `FindNeighbors()` and `FindClusters()` to compute cluster labels on the data integrated using the CCA method.
+
+**Hint:**
+
+- Set the default assay back to `"RNA"`.
+- For `FindNeighbors()`, set the arguments `reduction = "integrated.cca"` and `dims = 1:30`.
+- You may also specify `assay = "RNA"` for extra clarity.
+- For `FindClusters()`, set the arguments `resolution = 2` and `cluster.name = "cca_clusters"`.
+- You may also specify `graph.name = "RNA_snn"` for extra clarity.
+
+```{r}
+DefaultAssay(obj) <- "RNA"
+
+obj <- FindNeighbors(object = obj, assay = "RNA", reduction = "integrated.cca", dims = 1:30)
+
+obj <- FindClusters(object = obj, assay = "RNA", resolution = 2, cluster.name = "cca_clusters", graph.name = "RNA_snn")
+```
+
+- Use `RunUMAP()` and `DimPlot()` to compute and display the UMAP layout of the data integrated using CCA coloured twice: once coloured by experiment, once coloured by cluster label.
+
+**Hint:**
+
+- For `RunUMAP()`, set the arguments `reduction = "integrated.cca"`, `dims = 1:30`, and `reduction.name = "umap.cca"`.
+- For `DimPlot()`, set the arguments `reduction = "umap.cca"`, `group.by = c("orig.ident", "cca_clusters")`, `combine = FALSE`, and `label.size = 2`.
+- You may also specify `assay = "RNA"` for extra clarity.
+- Assign the output of `DimPlot()` to a new object called `plots_cca` to capture it for displaying it later.
+
+```{r}
+obj <- RunUMAP(object = obj, assay = "RNA", dims = 1:30, reduction = "integrated.cca", reduction.name = "umap.cca")
+
+plots_cca <- DimPlot(obj, reduction = "umap.cca", group.by = c("orig.ident", "cca_clusters"), combine = FALSE, label.size = 2)
+
+
+```
+
+- Use `wrap_plots()` to display the plots stored in the object `plots_cca`.
+
+**Hint:**
+
+- The `wrap_plots()` function is implemented in the package `patchwork`.
+
+```{r}
+wrap_plots(plots_cca)
+```
+
+- Use `wrap_plots()` to display the plots in the object `plots_cca` alongside those in the object `plots_unintegrated`.
+
+**Hint:**
+
+- Use `c()` to combine the plots from the two objects.
+- Use the argument `ncol = 2` to arrange the plots in a grid of two columns (one column for each object).
+- Use the argument `byrow = FALSE` to fill the grid of plots by column (one column for each object).
+
+```{r}
+wrap_plots(c(plots_unintegrated, plots_cca), ncol = 2, byrow = FALSE)
+```
+
+- Repeat the process of clustering and plotting for the other integration methods.
+
+**Hint:**
+
+- Use `FindNeighbors()` and `FindClusters()` to compute cluster labels on the data integrated using each method.
+- Use `RunUMAP()` and `DimPlot()` to compute and display the UMAP layout of the data integrated using each method twice: once coloured by experiment, once coloured by cluster label.
+- Assign each output of `DimPlot()` to a new, unique, object name.
+- Use `wrap_plots()` to display the plots in each object alongside those in the object `plots_unintegrated`.
+
+```{r}
+# RPCA example
+obj <- FindNeighbors(object = obj, assay = "RNA", reduction = "integrated.rpca", dims = 1:30)
+
+obj <- FindClusters(object = obj, resolution = 2, cluster.name = "rpca_clusters")
+
+obj <- RunUMAP(object = obj, assay = "RNA", dims = 1:30, reduction = "integrated.rpca", reduction.name = "umap.rpca")
+
+plots_rpca <- DimPlot(obj, reduction = "umap.rpca", group.by = c("orig.ident", "rpca_clusters"), combine = FALSE, label.size = 2)
+
+wrap_plots(c(plots_unintegrated, plots_rpca), ncol = 2, byrow = FALSE)
+
+```
+
+```{r}
+#Harmony 
+obj <- FindNeighbors(object = obj, assay = "RNA", reduction = "harmony", dims = 1:30)
+
+obj <- FindClusters(object = obj, resolution = 2, cluster.name = "harmony_clusters")
+
+obj <- RunUMAP(object = obj, assay = "RNA", dims = 1:30, reduction = "harmony", reduction.name = "umap.harmony")
+
+plots_harmony <- DimPlot(obj, reduction = "umap.harmony", group.by = c("orig.ident", "harmony_clusters"), combine = FALSE, label.size = 2)
+
+wrap_plots(c(plots_unintegrated, plots_harmony), ncol = 2, byrow = FALSE)
+```
+
+```{r}
+#integrated.mnn 
+obj <- FindNeighbors(object = obj, assay = "RNA", reduction = "integrated.mnn", dims = 1:30)
+
+obj <- FindClusters(object = obj, resolution = 2, cluster.name = "mnn_clusters")
+
+obj <- RunUMAP(object = obj, assay = "RNA", dims = 1:30, reduction = "integrated.mnn", reduction.name = "umap.mnn")
+
+plots_mnn <- DimPlot(obj, reduction = "umap.mnn", group.by = c("orig.ident", "mnn_clusters"), combine = FALSE, label.size = 2)
+
+wrap_plots(c(plots_unintegrated, plots_mnn), ncol = 2, byrow = FALSE)
+```
+
+**Hint:**
+
+- Set the default assay back to `"SCT"` before trying to analyse the sctransform-normalised data.
+- You may also specify `assay = "SCT"` for extra clarity.
+- You may also specify `graph.name = "SCT_snn"` for extra clarity.
+
+```{r}
+DefaultAssay(obj) = "SCT"
+
+obj <- FindNeighbors(object = obj, assay = "SCT", reduction = "integrated.rpca.sct", dims = 1:30)
+
+obj <- FindClusters(object = obj, resolution = 2, cluster.name = "rcpa_sct_clusters", graph.name = "SCT_snn")
+
+obj <- RunUMAP(object = obj, assay = "SCT", dims = 1:30, reduction = "integrated.rpca.sct", reduction.name = "umap.rcpa.sct")
+
+plots_rcpa_sct <- DimPlot(obj, reduction = "umap.rcpa.sct", group.by = c("orig.ident", "rcpa_sct_clusters"), combine = FALSE, label.size = 2)
+
+wrap_plots(c(plots_unintegrated, plots_rcpa_sct), ncol = 2, byrow = FALSE)
+
+```
+
+- Use `wrap_plots()` to display the plots stored in all the objects `plots_unintegrated`, `plots_cca`, `plots_harmony`, and `plots_mnn`, in a grid of four columns.
+
+```{r}
+#| fig-width: 14
+#| fig-height: 14
+
+wrap_plots(c(plots_unintegrated, plots_cca, plots_harmony, plots_mnn), ncol = 4)
+```
+
+### Marker gene expression
+
+Another angle from which integration results can be inspected is the expression of reliable marker genes in the clusters identified downstream of each integration method.
+
+However, note that those clusters are not purely direct results of the integration methods, but in this case also depend on the parameters of `FindNeighbors()` and `FindClusters()`, which may complicate their fair comparison and require some level of fine-tuning to refine the clustering results.
+
+- Use `VlnPlot()`, `NoLegend()`, and `ggtitle()` to visualise the expression of the gene "CD8A" across each set of clusters (after each integration method as well as the unintegrated clusters).
+
+**Hint:**
+
+- Use `VlnPlot()` once for each set of clusters: "unintegrated_clusters", "cca_clusters", "harmony_clusters", "mnn_clusters".
+- Assign each output of `VlnPlot()` to a new unique object name, to capture it for displaying it again later.
+- Use the argument `features = "CD8A"` to specify the name of the gene for which to visualise the expression level on the Y-axis.
+- Use the argument `group.by =` to specify the set of clusters to visualise in each plot.
+- Use `+ NoLegend()` to remove legends from the plot produced by `VlnPlot()`.
+- Use `+ ggtitle()` to add a unique title to each plot produced by `VlnPlot()`.
+- Note that `ggtitle()` is implemented in the package `ggplot2`.
+- Use the `|` operator (from the `patchwork` package) to pack all the plots into a single line (see `?plot_arithmetic` and [Stacking and packing](https://patchwork.data-imaginist.com/articles/guides/assembly.html#stacking-and-packing)).
+
+```{r}
+#| fig-width: 20
+#| fig-height: 3
+DefaultAssay(obj) <- "RNA"
+
+vln_unintegrated <- VlnPlot(obj, features = "CD8A", group.by = "unintegrated_clusters" ) +
+  NoLegend() +
+  ggtitle("CD8A - Unintegrated Clusters")
+
+vln_cca <- VlnPlot(obj, features = "CD8A", group.by = "cca_clusters" ) +
+  NoLegend() +
+  ggtitle("CD8A - CCA Clusters")
+
+vln_harmony <- VlnPlot(obj, features = "CD8A", group.by = "harmony_clusters" ) +
+  NoLegend() +
+  ggtitle("CD8A - Harmony Clusters")
+
+vln_mnn <- VlnPlot(obj, features = "CD8A", group.by = "mnn_clusters" ) +
+  NoLegend() +
+  ggtitle("CD8A - MNN Clusters")
+
+vln_unintegrated | vln_cca | vln_harmony | vln_mnn
+```
+
+### Visualising information combined across integration methods
+
+As all of the information produced by the various integration methods is stored in the same Seurat object, it is possible to produce figures that visualise information combined across integration methods.
+
+For instance, the clustering results obtained using integration methods may be used to colour scatter plots of cells in dimensionality reduction results produced by any of the other integration methods, including unintegrated data.
+
+Conversely, the dimensionality reduction result obtained using one of the integration methods may be coloured by the set of clustering results obtained by each of the integration methods.
+
+This can be used to visually assess the agreement between the various integration methods, using dimensionality reduction as a proxy for clustering for one integration method, and colouring for the other integration method.
+
+- Use `DimPlot()` to display the set of clusters obtained using CCA integration on the UMAP layout obtained using each of the integration methods.
+
+**Hint:**
+
+- Use `Idents()` to set the identity of cells to "cca_clusters".
+- Use `DimPlot()` once for each UMAP layout: "umap.unintegrated", "umap.cca", "umap.rpca", "umap.harmony", and "umap.mnn".
+- Assign each output of `DimPlot()` to a new unique object name, to capture it for displaying it again later.
+
+```{r}
+#| fig-width: 20
+#| fig-height: 3
+
+Idents(obj) <- "cca_clusters"
+
+umap_unintegrated_cca <- DimPlot(obj, reduction = "umap.unintegrated", label.size = 2 )
+umap_cca_cca <- DimPlot(obj, reduction = "umap.cca", label.size = 2 )
+umap_rpca_cca <- DimPlot(obj, reduction = "umap.rpca", label.size = 2 )
+umap_harmony_cca <- DimPlot(obj, reduction = "umap.harmony", label.size = 2 )
+umap_mnn_cca <- DimPlot(obj, reduction = "umap.mnn", label.size = 2 )
+umap_unintegrated_cca | umap_cca_cca | umap_rpca_cca | umap_harmony_cca | umap_mnn_cca
+```
+
+### Quantitively compare with LISI
+
+```{r}
+reduction_names <- c("pca", "integrated.cca", "integrated.rpca", "harmony", 
+                     "integrated.mnn", "integrated.rpca.sct")
+batch_variable <- "orig.ident"
+
+median_lisi <- vapply(reduction_names, USE.NAMES = TRUE, FUN.VALUE = numeric(1), 
+                      FUN = function(reduction) {
+  lisi_mx <- lisi::compute_lisi(Embeddings(obj, reduction), meta_data = obj[[]], 
+                                label_colnames = batch_variable)
+  return(median(lisi_mx[,1]))
+})
+```
+
+```{r}
+median_lisi_tidy <- data.frame(
+  reduction = factor(names(median_lisi), levels = reduction_names),
+  median_lisi = median_lisi) %>% 
+  arrange(desc(median_lisi))
+```
+
+```{r}
+#| fig.width = 7, fig.height = 5
+ggplot(median_lisi_tidy, 
+       aes(reorder(reduction, median_lisi, decreasing = TRUE), median_lisi)) +
+    geom_col() +
+    labs(x = "Integration method", y = "Median lisi") +
+    theme_classic()
+```
+
+```{r}
+sessionInfo()
+```

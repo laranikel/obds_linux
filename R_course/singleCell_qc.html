@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Kevin Rue-Albrecht">
+<meta name="dcterms.date" content="2024-11-11">
+
+<title>Template code for single-cell droplet quality control</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="singleCell_qc_files/libs/clipboard/clipboard.min.js"></script>
+<script src="singleCell_qc_files/libs/quarto-html/quarto.js"></script>
+<script src="singleCell_qc_files/libs/quarto-html/popper.min.js"></script>
+<script src="singleCell_qc_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="singleCell_qc_files/libs/quarto-html/anchor.min.js"></script>
+<link href="singleCell_qc_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="singleCell_qc_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="singleCell_qc_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="singleCell_qc_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="singleCell_qc_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Template code for single-cell droplet quality control</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Kevin Rue-Albrecht </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 11, 2024</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DropletUtils)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(cowplot)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scDblFinder)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Seurat)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DoubletFinder)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(celda)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scater)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sessioninfo)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="exercise" class="level1">
+<h1>Exercise</h1>
+<section id="empty-droplets" class="level2">
+<h2 class="anchored" data-anchor-id="empty-droplets">Empty droplets</h2>
+<ul>
+<li>Import the raw matrix into R; use <code>DropletUtils::read10xCounts()</code>. Make a <code>SingleCellExperiment</code> object called <code>sce</code>.</li>
+</ul>
+<p>Hints:</p>
+<ul>
+<li>Use the <code>samples=</code> argument with a named character vector, where the value is the path to the directory with data files, and the name is an arbitrary name for that sample (e.g., <code>pbmc5k</code>).</li>
+<li>Set the argument <code>col.names=</code> to <code>TRUE</code>, to use the cell barcodes as column names.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>sce <span class="ot">&lt;-</span> DropletUtils<span class="sc">::</span><span class="fu">read10xCounts</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">samples =</span> <span class="fu">c</span>(<span class="st">"pbmc5k"</span> <span class="ot">=</span> <span class="st">"/project/shared/r/2_r_single_cell/5-qc/raw_feature_bc_matrix/"</span>),</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>sce</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>class: SingleCellExperiment 
+dim: 33538 6794880 
+metadata(1): Samples
+assays(1): counts
+rownames(33538): ENSG00000243485 ENSG00000237613 ... ENSG00000277475
+  ENSG00000268674
+rowData names(3): ID Symbol Type
+colnames(6794880): AAACCCAAGAAACACT-1 AAACCCAAGAAACCAT-1 ...
+  TTTGTTGTCTTTGGCT-1 TTTGTTGTCTTTGTCG-1
+colData names(2): Sample Barcode
+reducedDimNames(0):
+mainExpName: NULL
+altExpNames(0):</code></pre>
+</div>
+</div>
+<ul>
+<li>Remove droplets without any count at all.</li>
+</ul>
+<p>This will massively speed up downstream steps, while removing unquestionable empty droplets.</p>
+<p>Hint:</p>
+<ul>
+<li>There is no designated function for this. Instead, calculate the sum of UMI for each barcode in the ‘counts’ assay using <code>colSums()</code>, and use indexing with single square brackets to only keep barcodes with UMI sum greater than 0.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>sce_filtered <span class="ot">&lt;-</span> <span class="fu">colSums</span>(<span class="fu">assay</span>(sce, <span class="st">"counts"</span>)) <span class="sc">&gt;</span> <span class="dv">0</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(sce_filtered)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>AAACCCAAGAAACACT-1 AAACCCAAGAAACCAT-1 AAACCCAAGAAACCCA-1 AAACCCAAGAAACCCG-1 
+             FALSE              FALSE               TRUE               TRUE 
+AAACCCAAGAAACCTG-1 AAACCCAAGAAACGAA-1 
+              TRUE              FALSE </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sce <span class="ot">&lt;-</span> sce[ ,sce_filtered ]</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>sce</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>class: SingleCellExperiment 
+dim: 33538 940698 
+metadata(1): Samples
+assays(1): counts
+rownames(33538): ENSG00000243485 ENSG00000237613 ... ENSG00000277475
+  ENSG00000268674
+rowData names(3): ID Symbol Type
+colnames(940698): AAACCCAAGAAACCCA-1 AAACCCAAGAAACCCG-1 ...
+  TTTGTTGTCTTTGCAT-1 TTTGTTGTCTTTGCGC-1
+colData names(2): Sample Barcode
+reducedDimNames(0):
+mainExpName: NULL
+altExpNames(0):</code></pre>
+</div>
+</div>
+<ul>
+<li>Run <code>DropletUtils::emptyDrops()</code> on the remaining droplets.</li>
+</ul>
+<p>Hint:</p>
+<ul>
+<li>Use <code>set.seed()</code> to ensure reproducibility.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>out <span class="ot">&lt;-</span> DropletUtils<span class="sc">::</span><span class="fu">emptyDrops</span>(sce, <span class="at">assay.type =</span> <span class="st">"counts"</span>, <span class="at">niters =</span> <span class="dv">10000</span> )</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>out  <span class="sc">%&gt;%</span> </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.tibble</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(FDR))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `as.tibble()` was deprecated in tibble 2.0.0.
+ℹ Please use `as_tibble()` instead.
+ℹ The signature and semantics have changed, see `?as_tibble`.</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6,434 × 5
+   Total LogProb   PValue Limited    FDR
+   &lt;int&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;lgl&gt;    &lt;dbl&gt;
+ 1  8385  -9327. 0.000100 TRUE    0     
+ 2   115   -438. 0.206    FALSE   0.229 
+ 3 11768 -11280. 0.000100 TRUE    0     
+ 4  6948  -7412. 0.000100 TRUE    0     
+ 5  9354  -8277. 0.000100 TRUE    0     
+ 6   131   -506. 0.0409   FALSE   0.0481
+ 7  8973  -9939. 0.000100 TRUE    0     
+ 8  9291  -8416. 0.000100 TRUE    0     
+ 9 25082 -19238. 0.000100 TRUE    0     
+10  8803  -6765. 0.000100 TRUE    0     
+# ℹ 6,424 more rows</code></pre>
+</div>
+</div>
+<p><strong>How do you read the output? Which droplets would you consider empty?</strong></p>
+<blockquote class="blockquote">
+<p>Answer:</p>
+</blockquote>
+<ul>
+<li>Remove empty droplets from the data sets. Call the new object <code>sce_filtered_emptydrops</code>.</li>
+</ul>
+<p>Hint:</p>
+<ul>
+<li>Use the ‘FDR’ column of the <code>out</code> object above.</li>
+<li>Identify the droplets below a givne FDR threshold (e.g.&nbsp;0.01).</li>
+<li>Use the <code>which()</code> function to get rid of NA values.</li>
+<li>Use indexing to keep only the desired cells from the <code>sce</code> object.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>sce_filtered_emptydrops <span class="ot">&lt;-</span> sce[, <span class="fu">which</span>(out<span class="sc">$</span>FDR <span class="sc">&lt;</span><span class="fl">0.001</span>) ]</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>sce_filtered_emptydrops</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>class: SingleCellExperiment 
+dim: 33538 5127 
+metadata(1): Samples
+assays(1): counts
+rownames(33538): ENSG00000243485 ENSG00000237613 ... ENSG00000277475
+  ENSG00000268674
+rowData names(3): ID Symbol Type
+colnames(5127): AAACCCAAGACAGCTG-1 AAACCCAAGTTAACGA-1 ...
+  TTTGTTGTCACGGACC-1 TTTGTTGTCCACACCT-1
+colData names(2): Sample Barcode
+reducedDimNames(0):
+mainExpName: NULL
+altExpNames(0):</code></pre>
+</div>
+</div>
+</section>
+<section id="bonus-point" class="level2">
+<h2 class="anchored" data-anchor-id="bonus-point">Bonus point</h2>
+<ul>
+<li>Draw plots comparing empty droplets and other droplets (e.g., library size, mitochondrial content, PCA).</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">library_size =</span> <span class="fu">colSums</span>(<span class="fu">assay</span>(sce, <span class="st">"counts"</span>)),</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">empty_droplet =</span> out<span class="sc">$</span>FDR <span class="sc">&gt;</span> <span class="fl">0.01</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_data, <span class="fu">aes</span>(empty_droplet, library_size)) <span class="sc">+</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">height =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">trans =</span> <span class="st">"log10"</span>) <span class="sc">+</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  cowplot<span class="sc">::</span><span class="fu">theme_cowplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-6-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>is.mt <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="st">"^MT-"</span>, <span class="fu">rowData</span>(sce)[[<span class="st">"Symbol"</span>]])</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># table(is.mt)</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">total =</span> <span class="fu">colSums</span>(<span class="fu">assay</span>(sce, <span class="st">"counts"</span>)),</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">MT_total =</span> <span class="fu">colSums</span>(<span class="fu">assay</span>(sce, <span class="st">"counts"</span>)[is.mt, ]),</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">MT_percent =</span> MT_total <span class="sc">/</span> total <span class="sc">*</span> <span class="dv">100</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">empty_droplet =</span> out<span class="sc">$</span>FDR <span class="sc">&gt;</span> <span class="fl">0.01</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_data, <span class="fu">aes</span>(empty_droplet, MT_percent)) <span class="sc">+</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">height =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">#scale_y_continuous(trans = "log10") +</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  cowplot<span class="sc">::</span><span class="fu">theme_cowplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-7-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>sce <span class="ot">&lt;-</span> <span class="fu">logNormCounts</span>(sce)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>sce <span class="ot">&lt;-</span> <span class="fu">runPCA</span>(sce)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reducedDim</span>(sce, <span class="st">"PCA"</span>)[, <span class="fu">c</span>(<span class="st">"PC1"</span>, <span class="st">"PC2"</span>)] <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>(),</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">empty_droplet =</span> out<span class="sc">$</span>FDR <span class="sc">&gt;</span> <span class="fl">0.01</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_data, <span class="fu">aes</span>(PC1, PC2, <span class="at">color =</span> empty_droplet)) <span class="sc">+</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">height =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  cowplot<span class="sc">::</span><span class="fu">theme_cowplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-8-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>Import the filtered matrix for the same cells and compare their set of filtered cells to yours.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>sce_filtered_cellranger <span class="ot">&lt;-</span> DropletUtils<span class="sc">::</span><span class="fu">read10xCounts</span>(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">samples =</span> <span class="fu">c</span>(<span class="st">"pbmc5k"</span> <span class="ot">=</span> <span class="st">"/project/shared/r/2_r_single_cell/5-qc/filtered_feature_bc_matrix/"</span>),</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="cn">TRUE</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># sce_filtered_cellranger</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>all_barcodes <span class="ot">&lt;-</span> <span class="fu">colnames</span>(sce)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co"># length(all_barcodes)</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>compare_table <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">emptydrops =</span> all_barcodes <span class="sc">%in%</span> <span class="fu">colnames</span>(sce)[out<span class="sc">$</span>FDR <span class="sc">&lt;=</span> <span class="fl">0.01</span>],</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">cellranger =</span> all_barcodes <span class="sc">%in%</span> <span class="fu">colnames</span>(sce_filtered_cellranger),</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(compare_table)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          cellranger
+emptydrops  FALSE   TRUE
+     FALSE 935305    121
+     TRUE     238   5034</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="exercise-1" class="level1">
+<h1>Exercise</h1>
+<section id="doublets" class="level2">
+<h2 class="anchored" data-anchor-id="doublets">Doublets</h2>
+<p>Continue using the data set after you excluded empty droplets: <code>sce_filtered_emptydrops</code>.</p>
+<ul>
+<li>Run <code>scDblFinder::scDblFinder()</code>. Store the output in a new object called <code>sce_scdblfinder</code>.</li>
+</ul>
+<p>Hint:</p>
+<ul>
+<li>Use <code>set.seed()</code> to ensure reproducibility.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>sce_scdblfinder <span class="ot">&lt;-</span> <span class="fu">scDblFinder</span>(sce_filtered_emptydrops )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in .checkSCE(sce): Some cells in `sce` have an extremely low read
+counts; note that these could trigger errors and might best be filtered out</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Creating ~5000 artificial doublets...</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Dimensional reduction</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Evaluating kNN...</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Training model...</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>iter=0, 531 cells excluded from training.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>iter=1, 514 cells excluded from training.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>iter=2, 475 cells excluded from training.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Threshold found:0.457</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>219 (4.3%) doublets called</code></pre>
+</div>
+</div>
+<ul>
+<li>Use the <code>table()</code> function to display the number of cells annotated as doublet or singlet.</li>
+</ul>
+<p>Hint:</p>
+<ul>
+<li>The <code>scDblFinder()</code> function stored that information in the colData column called <code>scDblFinder.class</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>sce_scdblfinder</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>class: SingleCellExperiment 
+dim: 33538 5127 
+metadata(2): Samples scDblFinder.threshold
+assays(1): counts
+rownames(33538): ENSG00000243485 ENSG00000237613 ... ENSG00000277475
+  ENSG00000268674
+rowData names(4): ID Symbol Type scDblFinder.selected
+colnames(5127): AAACCCAAGACAGCTG-1 AAACCCAAGTTAACGA-1 ...
+  TTTGTTGTCACGGACC-1 TTTGTTGTCCACACCT-1
+colData names(6): Sample Barcode ... scDblFinder.weighted
+  scDblFinder.cxds_score
+reducedDimNames(0):
+mainExpName: NULL
+altExpNames(0):</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colData</span>(sce_scdblfinder)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>DataFrame with 5127 rows and 6 columns
+                        Sample            Barcode scDblFinder.class
+                   &lt;character&gt;        &lt;character&gt;          &lt;factor&gt;
+AAACCCAAGACAGCTG-1      pbmc5k AAACCCAAGACAGCTG-1           singlet
+AAACCCAAGTTAACGA-1      pbmc5k AAACCCAAGTTAACGA-1           singlet
+AAACCCACAGTCGCAC-1      pbmc5k AAACCCACAGTCGCAC-1           singlet
+AAACCCAGTAGCTTGT-1      pbmc5k AAACCCAGTAGCTTGT-1           singlet
+AAACCCATCTGCCCTA-1      pbmc5k AAACCCATCTGCCCTA-1           singlet
+...                        ...                ...               ...
+TTTGTTGCACCAATTG-1      pbmc5k TTTGTTGCACCAATTG-1           doublet
+TTTGTTGCAGGAATAT-1      pbmc5k TTTGTTGCAGGAATAT-1           singlet
+TTTGTTGCATACAGCT-1      pbmc5k TTTGTTGCATACAGCT-1           singlet
+TTTGTTGTCACGGACC-1      pbmc5k TTTGTTGTCACGGACC-1           singlet
+TTTGTTGTCCACACCT-1      pbmc5k TTTGTTGTCCACACCT-1           singlet
+                   scDblFinder.score scDblFinder.weighted
+                           &lt;numeric&gt;            &lt;numeric&gt;
+AAACCCAAGACAGCTG-1       0.014389436             0.377531
+AAACCCAAGTTAACGA-1       0.001080590             0.124189
+AAACCCACAGTCGCAC-1       0.000912289             0.231668
+AAACCCAGTAGCTTGT-1       0.285933107             0.475607
+AAACCCATCTGCCCTA-1       0.006581941             0.211032
+...                              ...                  ...
+TTTGTTGCACCAATTG-1       8.91031e-01             0.832282
+TTTGTTGCAGGAATAT-1       3.04757e-05             0.000000
+TTTGTTGCATACAGCT-1       3.18511e-02             0.254228
+TTTGTTGTCACGGACC-1       4.03440e-03             0.192593
+TTTGTTGTCCACACCT-1       1.02198e-03             0.254769
+                   scDblFinder.cxds_score
+                                &lt;numeric&gt;
+AAACCCAAGACAGCTG-1              0.1443682
+AAACCCAAGTTAACGA-1              0.0869019
+AAACCCACAGTCGCAC-1              0.0875931
+AAACCCAGTAGCTTGT-1              0.1352641
+AAACCCATCTGCCCTA-1              0.1399253
+...                                   ...
+TTTGTTGCACCAATTG-1            0.123260720
+TTTGTTGCAGGAATAT-1            0.000212796
+TTTGTTGCATACAGCT-1            0.108507979
+TTTGTTGTCACGGACC-1            0.076657000
+TTTGTTGTCCACACCT-1            0.065857357</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">colData</span>(sce_scdblfinder)<span class="sc">$</span>scDblFinder.class )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+singlet doublet 
+   4908     219 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(sce_scdblfinder<span class="sc">$</span>scDblFinder.score)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-11-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>How do you read the output? Which droplets would you consider doublets?</strong></p>
+<blockquote class="blockquote">
+<p>Answer:</p>
+</blockquote>
+<ul>
+<li>Remove doublets from the data set. Call the new object <code>sce_filtered_scdblfinder</code>.</li>
+</ul>
+<p>Hint:</p>
+<ul>
+<li>Use indexing to keep only the droplets annotated as ‘singlet’ in the <code>scDblFinder.class</code> column of cell metadata.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>sce_filtered_scdblfinder <span class="ot">&lt;-</span> sce_scdblfinder[ ,<span class="fu">colData</span>(sce_scdblfinder)<span class="sc">$</span>scDblFinder.class <span class="sc">==</span><span class="st">"singlet"</span> ]</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>sce_filtered_scdblfinder</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>class: SingleCellExperiment 
+dim: 33538 4908 
+metadata(2): Samples scDblFinder.threshold
+assays(1): counts
+rownames(33538): ENSG00000243485 ENSG00000237613 ... ENSG00000277475
+  ENSG00000268674
+rowData names(4): ID Symbol Type scDblFinder.selected
+colnames(4908): AAACCCAAGACAGCTG-1 AAACCCAAGTTAACGA-1 ...
+  TTTGTTGTCACGGACC-1 TTTGTTGTCCACACCT-1
+colData names(6): Sample Barcode ... scDblFinder.weighted
+  scDblFinder.cxds_score
+reducedDimNames(0):
+mainExpName: NULL
+altExpNames(0):</code></pre>
+</div>
+</div>
+</section>
+<section id="bonus-point-1" class="level2">
+<h2 class="anchored" data-anchor-id="bonus-point-1">Bonus point</h2>
+<ul>
+<li>Draw plots comparing doublets and other droplets. (e.g., library size, mitochondrial content, PCA)</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">library_size =</span> <span class="fu">colSums</span>(<span class="fu">assay</span>(sce_scdblfinder, <span class="st">"counts"</span>)),</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">scdblfinder =</span> sce_scdblfinder<span class="sc">$</span>scDblFinder.class</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_data, <span class="fu">aes</span>(scdblfinder, library_size)) <span class="sc">+</span></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">height =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">trans =</span> <span class="st">"log10"</span>) <span class="sc">+</span></span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  cowplot<span class="sc">::</span><span class="fu">theme_cowplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-13-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>is.mt <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="st">"^MT-"</span>, <span class="fu">rowData</span>(sce_scdblfinder)[[<span class="st">"Symbol"</span>]])</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="co"># table(is.mt)</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">total =</span> <span class="fu">colSums</span>(<span class="fu">assay</span>(sce_scdblfinder, <span class="st">"counts"</span>)),</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">MT_total =</span> <span class="fu">colSums</span>(<span class="fu">assay</span>(sce_scdblfinder, <span class="st">"counts"</span>)[is.mt, ]),</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">MT_percent =</span> MT_total <span class="sc">/</span> total <span class="sc">*</span> <span class="dv">100</span>,</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">scdblfinder =</span> sce_scdblfinder<span class="sc">$</span>scDblFinder.class</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_data, <span class="fu">aes</span>(scdblfinder, MT_percent)) <span class="sc">+</span></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">height =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">trans =</span> <span class="st">"log10"</span>) <span class="sc">+</span></span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>  cowplot<span class="sc">::</span><span class="fu">theme_cowplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in scale_y_continuous(trans = "log10"): log-10 transformation
+introduced infinite values.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-14-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>sce_scdblfinder <span class="ot">&lt;-</span> <span class="fu">logNormCounts</span>(sce_scdblfinder)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>sce_scdblfinder <span class="ot">&lt;-</span> <span class="fu">runPCA</span>(sce_scdblfinder)</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>plot_data <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reducedDim</span>(sce_scdblfinder, <span class="st">"PCA"</span>)[, <span class="fu">c</span>(<span class="st">"PC1"</span>, <span class="st">"PC2"</span>)] <span class="sc">%&gt;%</span> <span class="fu">as_tibble</span>(),</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">scdblfinder =</span> sce_scdblfinder<span class="sc">$</span>scDblFinder.class</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span> </span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(scdblfinder)</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_data, <span class="fu">aes</span>(PC1, PC2, <span class="at">color =</span> scdblfinder)) <span class="sc">+</span></span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">height =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>  cowplot<span class="sc">::</span><span class="fu">theme_cowplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-15-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="bonus-point-2" class="level2">
+<h2 class="anchored" data-anchor-id="bonus-point-2">Bonus point</h2>
+<ul>
+<li><p>Compare results with the output of <a href="https://github.com/chris-mcginnis-ucsf/DoubletFinder" class="uri">https://github.com/chris-mcginnis-ucsf/DoubletFinder</a></p>
+<ul>
+<li>You will need to make a <code>Seurat</code> object.</li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Pre-process Seurat object (standard)</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>seu <span class="ot">&lt;-</span> <span class="fu">CreateSeuratObject</span>(<span class="at">counts =</span> <span class="fu">assay</span>(sce_filtered_emptydrops, <span class="st">"counts"</span>))</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>seu <span class="ot">&lt;-</span> <span class="fu">NormalizeData</span>(seu)</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>seu <span class="ot">&lt;-</span> <span class="fu">FindVariableFeatures</span>(seu, <span class="at">selection.method =</span> <span class="st">"vst"</span>, <span class="at">nfeatures =</span> <span class="dv">2000</span>)</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>seu <span class="ot">&lt;-</span> <span class="fu">ScaleData</span>(seu)</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>seu <span class="ot">&lt;-</span> <span class="fu">RunPCA</span>(seu)</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>seu <span class="ot">&lt;-</span> <span class="fu">RunUMAP</span>(seu, <span class="at">dims =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: The default method for RunUMAP has changed from calling Python UMAP via reticulate to the R-native UWOT using the cosine metric
+To use Python UMAP via reticulate, set umap.method to 'umap-learn' and metric to 'correlation'
+This message will be shown once per session</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="do">## pK Identification (no ground-truth) </span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>oblivion <span class="ot">&lt;-</span> <span class="fu">capture.output</span>( <span class="do">## get rid of printed messages</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  sweep.res.list <span class="ot">&lt;-</span> <span class="fu">paramSweep</span>(seu, <span class="at">PCs =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">sct =</span> <span class="cn">FALSE</span>) <span class="do">## still assign the value</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>sweep.stats <span class="ot">&lt;-</span> <span class="fu">summarizeSweep</span>(sweep.res.list, <span class="at">GT =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>bcmvn <span class="ot">&lt;-</span> <span class="fu">find.pK</span>(sweep.stats)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-17-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NULL</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(bcmvn, <span class="fu">aes</span>(<span class="fu">as.numeric</span>(<span class="fu">as.character</span>(pK)), BCmetric)) <span class="sc">+</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  cowplot<span class="sc">::</span><span class="fu">theme_cowplot</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scran)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>quick_clusters <span class="ot">&lt;-</span> <span class="fu">quickCluster</span>(<span class="at">x =</span> <span class="fu">LayerData</span>(<span class="at">object =</span> seu, <span class="at">layer =</span> <span class="st">"data"</span>)[<span class="fu">VariableFeatures</span>(seu), ])</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(quick_clusters)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>quick_clusters
+   1    2    3    4    5    6    7    8    9   10   11   12   13   14 
+ 564  402  354  245  580  435  266 1089  165  100  324  282  130  191 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Homotypic Doublet Proportion Estimate </span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>homotypic.prop <span class="ot">&lt;-</span> <span class="fu">modelHomotypic</span>(quick_clusters)</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>nExp_poi <span class="ot">&lt;-</span> <span class="fu">round</span>(<span class="fl">0.01</span><span class="sc">*</span><span class="fu">nrow</span>(seu<span class="sc">@</span>meta.data))  <span class="do">## Assuming 7.5% doublet formation rate - tailor for your dataset</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>nExp_poi.adj <span class="ot">&lt;-</span> <span class="fu">round</span>(nExp_poi<span class="sc">*</span>(<span class="dv">1</span><span class="sc">-</span>homotypic.prop))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Run DoubletFinder with varying classification stringencies </span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>seu <span class="ot">&lt;-</span> <span class="fu">doubletFinder</span>(seu, <span class="at">PCs =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">pN =</span> <span class="fl">0.25</span>, <span class="at">pK =</span> <span class="fl">0.2</span>, <span class="at">nExp =</span> nExp_poi, <span class="at">reuse.pANN =</span> <span class="cn">FALSE</span>, <span class="at">sct =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(seu<span class="sc">$</span>DF.classifications_0<span class="fl">.25</span>_0<span class="fl">.2</span>_51)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>seu <span class="ot">&lt;-</span> <span class="fu">doubletFinder</span>(seu, <span class="at">PCs =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">pN =</span> <span class="fl">0.25</span>, <span class="at">pK =</span> <span class="fl">0.2</span>, <span class="at">nExp =</span> nExp_poi.adj, <span class="at">reuse.pANN =</span> <span class="st">"DF.classifications_0.25_0.2_51"</span>, <span class="at">sct =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(seu<span class="sc">$</span>DF.classifications_0<span class="fl">.25</span>_0<span class="fl">.2</span>_46)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>doublets_table <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="fu">colnames</span>(sce_filtered_emptydrops),</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">scDblFinder =</span> <span class="fu">factor</span>(sce_scdblfinder<span class="sc">$</span>scDblFinder.class, <span class="fu">c</span>(<span class="st">"singlet"</span>, <span class="st">"doublet"</span>)),</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">DoubletFinder =</span> <span class="fu">factor</span>(seu<span class="sc">$</span>DF.classifications_0<span class="fl">.25</span>_0<span class="fl">.2</span>_51, <span class="fu">c</span>(<span class="st">"Singlet"</span>, <span class="st">"Doublet"</span>))</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(doublets_table)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="exercise-2" class="level1">
+<h1>Exercise</h1>
+<section id="ambient-rna" class="level2">
+<h2 class="anchored" data-anchor-id="ambient-rna">Ambient RNA</h2>
+<p>Continue using the data set after excluding empty droplets and doublets: <code>sce_filtered_scdblfinder</code>.</p>
+<ul>
+<li>Run <code>celda::decontX()</code>.</li>
+</ul>
+<p>Hint:</p>
+<ul>
+<li>Use <code>set.seed()</code> to ensure reproducibility.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>sce_decontX <span class="ot">&lt;-</span> celda<span class="sc">::</span><span class="fu">decontX</span>(sce_filtered_scdblfinder)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li>Visualize the UMAP layout created by <code>decontX</code>; use <code>plotDimReduceCluster()</code>.</li>
+</ul>
+<p>Hint:</p>
+<ul>
+<li>Look at the example section of the help page. You will find that the authors use the arguments <code>x=</code>, <code>dim1=</code> and <code>dim2=</code>.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>umap <span class="ot">&lt;-</span> <span class="fu">reducedDim</span>(sce_decontX, <span class="st">"decontX_UMAP"</span>)</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plotDimReduceCluster</span>(<span class="at">x =</span> sce_decontX<span class="sc">$</span>decontX_clusters , <span class="at">dim1 =</span> umap[,<span class="dv">1</span>] , <span class="at">dim2 =</span> umap[,<span class="dv">2</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-27-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>Visualize the percentage of contamination estimated by <code>decontX</code> in each cell. Use the <code>plotDecontXContamination()</code> function.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotDecontXContamination</span>(sce_decontX)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-28-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Does any cluster display higher (estimated) levels of ambient RNA?</strong></p>
+<blockquote class="blockquote">
+<p>Cells in cluster 5 (see previous plot) show a highlevel of contamination (close to 1).</p>
+</blockquote>
+<ul>
+<li>Visualize the log-normalised expression of marker genes on a UMAP layout faceted by gene; use <code>plotDimReduceFeature()</code>.</li>
+</ul>
+<p><strong>Note:</strong> For instance, use <code>CD3D</code>, <code>CD3E</code>, <code>GNLY</code>, <code>LYZ</code>, <code>S100A8</code>, <code>S100A9</code>, <code>CD79A</code>, <code>CD79B</code>, and <code>MS4A1</code>.</p>
+<!--
+Source: https://bioconductor.org/packages/devel/bioc/vignettes/celda/inst/doc/decontX.pdf
+(Section 5.3)
+We will use:
+- CD3D and CD3E for T-cells,
+- LYZ, S100A8, and S100A9 for monocytes,
+- CD79A, CD79B, and MS4A1 for B-cells,
+- GNLY for NK-cells,
+- and PPBP for megakaryocytes
+-->
+<p>Hint:</p>
+<ul>
+<li>Look at the documentation; you will see that developers provide a matrix of log-normalised counts, and use the arguments <code>dim1=</code> and <code>dim2=</code>.</li>
+<li>First, use the function <code>logNormCounts()</code> to add the matrix of log-normalised ‘raw’ counts to the object.</li>
+<li>At this point, genes are still identified by their Ensembl identifier. Here, we use the function <code>uniquifyFeatureNames()</code> to identify genes by a unique combination of gene symbol and Ensembl identifier.</li>
+<li>Use the argument <code>exactMatch=</code> to indicate that you are giving exact feature identifiers.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>sce_decontX <span class="ot">&lt;-</span> <span class="fu">logNormCounts</span>(sce_decontX, <span class="at">assay.type =</span> <span class="st">"counts"</span>)</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(sce_decontX) <span class="ot">&lt;-</span> <span class="fu">uniquifyFeatureNames</span>(</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">ID =</span> <span class="fu">rownames</span>(sce_decontX),</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">names =</span> <span class="fu">rowData</span>(sce_decontX)[[<span class="st">"Symbol"</span>]]</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a><span class="fu">plotDimReduceFeature</span>(</span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>(<span class="fu">logcounts</span>(sce_decontX)),</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">dim1 =</span> umap[,<span class="dv">1</span>],</span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">dim2 =</span> umap[, <span class="dv">2</span>], </span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">features =</span> <span class="fu">c</span>(<span class="st">"CD3D"</span>, <span class="st">"CD3E"</span>, <span class="st">"GNLY"</span>,</span>
+<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>               <span class="st">"LYZ"</span>, <span class="st">"S100A8"</span>, <span class="st">"S100A9"</span>,</span>
+<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>               <span class="st">"CD79A"</span>, <span class="st">"CD79B"</span>, <span class="st">"MS4A1"</span>),</span>
+<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">exactMatch =</span> <span class="cn">TRUE</span></span>
+<span id="cb58-14"><a href="#cb58-14" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in asMethod(object): sparse-&gt;dense coercion: allocating vector of size
+1.2 GiB</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-29-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>plotting low expression on top of high expression for differnt view</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotDimReduceFeature</span>(</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.matrix</span>(<span class="fu">logcounts</span>(sce_decontX)),</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">dim1 =</span> umap[,<span class="dv">1</span>],</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">dim2 =</span> umap[, <span class="dv">2</span>], </span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">features =</span> <span class="fu">c</span>(<span class="st">"CD3D"</span>, <span class="st">"CD3E"</span>, <span class="st">"GNLY"</span>,</span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a>               <span class="st">"LYZ"</span>, <span class="st">"S100A8"</span>, <span class="st">"S100A9"</span>,</span>
+<span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>               <span class="st">"CD79A"</span>, <span class="st">"CD79B"</span>, <span class="st">"MS4A1"</span>),</span>
+<span id="cb60-8"><a href="#cb60-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">exactMatch =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb60-9"><a href="#cb60-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">decreasing =</span> <span class="cn">TRUE</span></span>
+<span id="cb60-10"><a href="#cb60-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in asMethod(object): sparse-&gt;dense coercion: allocating vector of size
+1.2 GiB</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-30-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>Visualise the percentage of cells with detectable expression of marker genes before and after decontamination as a bar plot; use <code>plotDecontXMarkerPercentage()</code>.</li>
+</ul>
+<p>Hint:</p>
+<ul>
+<li>First, make a (base R) list of markers, grouped by cell type.</li>
+<li>Then, make a (base R) list of cell types of interest, indicating the cluster(s) that contain those cell types.</li>
+<li>Finally, provide those two lists to the arguments <code>markers=</code> and <code>groupClusters=</code> of the function <code>plotDecontXMarkerPercentage()</code>.</li>
+<li>The multiple code chunks below are here for you to run the <code>plotDecontXMarkerPercentage()</code> function multiple times, either on the assay ‘counts’, ‘decontXcounts’, or both.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>markers <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Tcell_Markers =</span> <span class="fu">c</span>(<span class="st">"CD3E"</span>, <span class="st">"CD3D"</span>),</span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Bcell_Markers =</span> <span class="fu">c</span>(<span class="st">"CD79A"</span>, <span class="st">"CD79B"</span>, <span class="st">"MS4A1"</span>),</span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Monocyte_Markers =</span> <span class="fu">c</span>(<span class="st">"S100A8"</span>, <span class="st">"S100A9"</span>, <span class="st">"LYZ"</span>),</span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">NKcell_Markers =</span> <span class="st">"GNLY"</span></span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a>cellTypeMappings <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb62-8"><a href="#cb62-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">Bcells =</span> <span class="fu">c</span>(<span class="dv">4</span> ),</span>
+<span id="cb62-9"><a href="#cb62-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">Monocytes =</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">9</span> ),</span>
+<span id="cb62-10"><a href="#cb62-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">Tcells =</span> <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">1</span>),</span>
+<span id="cb62-11"><a href="#cb62-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">NKcells =</span> <span class="fu">c</span>(<span class="dv">6</span> )</span>
+<span id="cb62-12"><a href="#cb62-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb62-13"><a href="#cb62-13" aria-hidden="true" tabindex="-1"></a><span class="fu">plotDecontXMarkerPercentage</span>(</span>
+<span id="cb62-14"><a href="#cb62-14" aria-hidden="true" tabindex="-1"></a>  sce_decontX,</span>
+<span id="cb62-15"><a href="#cb62-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">markers =</span> markers,</span>
+<span id="cb62-16"><a href="#cb62-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">groupClusters =</span> cellTypeMappings,</span>
+<span id="cb62-17"><a href="#cb62-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">assayName =</span> <span class="st">"counts"</span></span>
+<span id="cb62-18"><a href="#cb62-18" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-31-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotDecontXMarkerPercentage</span>(</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>  sce_decontX,</span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">markers =</span> markers,</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">groupClusters =</span> cellTypeMappings,</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">assayName =</span> <span class="st">"decontXcounts"</span></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-32-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotDecontXMarkerPercentage</span>(</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>  sce_decontX,</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">markers =</span> markers,</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">groupClusters =</span> cellTypeMappings,</span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">assayName =</span> <span class="fu">c</span>(<span class="st">"counts"</span>, <span class="st">"decontXcounts"</span>)</span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-33-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li>Visualize the log-normalised expression of marker genes before and after decontamination as a violin plot; use <code>plotDecontXMarkerExpression()</code>.</li>
+</ul>
+<p>Hint:</p>
+<ul>
+<li>This function produces a facet for each marker in each cell type. That can make a lot of facets! To limit the number of facets, consider giving the function the markers for just one cell type e.g.&nbsp;<code>markers[["Monocyte_Markers"]]</code>.</li>
+<li>Use the argument <code>groupClusters=</code> to provide the list of cell types and associated clusters defined earlier.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotDecontXMarkerExpression</span>(</span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  sce_decontX,</span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">markers =</span> markers[[<span class="st">"Monocyte_Markers"</span>]],</span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">groupClusters =</span> cellTypeMappings,</span>
+<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">ncol =</span> <span class="dv">3</span></span>
+<span id="cb65-6"><a href="#cb65-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="singleCell_qc_files/figure-html/unnamed-chunk-34-1.svg" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="session-info" class="level1">
+<h1>Session info</h1>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">session_info</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.3.0 (2023-04-21)
+ os       Ubuntu 22.04.5 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  en_GB.UTF-8
+ ctype    en_GB.UTF-8
+ tz       Europe/London
+ date     2025-06-10
+ pandoc   3.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/x86_64/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ package              * version   date (UTC) lib source
+ abind                  1.4-5     2016-07-21 [2] CRAN (R 4.3.0)
+ assertive.base         0.0-9     2021-02-08 [2] CRAN (R 4.3.0)
+ assertive.files        0.0-2     2016-05-10 [2] CRAN (R 4.3.0)
+ assertive.numbers      0.0-2     2016-05-09 [2] CRAN (R 4.3.0)
+ assertive.properties   0.0-5     2022-04-21 [2] CRAN (R 4.3.0)
+ assertive.types        0.0-3     2016-12-30 [2] CRAN (R 4.3.0)
+ beachmat               2.16.0    2023-04-25 [2] Bioconductor
+ beeswarm               0.4.0     2021-06-01 [2] CRAN (R 4.3.0)
+ Biobase              * 2.60.0    2023-04-25 [2] Bioconductor
+ BiocGenerics         * 0.46.0    2023-04-25 [2] Bioconductor
+ BiocIO                 1.10.0    2023-04-25 [2] Bioconductor
+ BiocNeighbors          1.18.0    2023-04-25 [2] Bioconductor
+ BiocParallel           1.34.2    2023-05-22 [2] Bioconductor
+ BiocSingular           1.16.0    2023-04-25 [2] Bioconductor
+ Biostrings             2.68.1    2023-05-16 [2] Bioconductor
+ bitops                 1.0-7     2021-04-24 [2] CRAN (R 4.3.0)
+ bluster                1.10.0    2023-04-25 [2] Bioconductor
+ celda                * 1.16.1    2023-05-02 [2] Bioconductor
+ cli                    3.6.1     2023-03-23 [2] CRAN (R 4.3.0)
+ cluster                2.1.4     2022-08-22 [3] CRAN (R 4.3.0)
+ codetools              0.2-19    2023-02-01 [3] CRAN (R 4.3.0)
+ colorspace             2.1-0     2023-01-23 [2] CRAN (R 4.3.0)
+ combinat               0.0-8     2012-10-29 [2] CRAN (R 4.3.0)
+ cowplot              * 1.1.1     2020-12-30 [2] CRAN (R 4.3.0)
+ crayon                 1.5.2     2022-09-29 [2] CRAN (R 4.3.0)
+ curl                   5.0.2     2023-08-14 [2] CRAN (R 4.3.0)
+ data.table             1.14.8    2023-02-17 [2] CRAN (R 4.3.0)
+ dbscan                 1.1-11    2022-10-27 [2] CRAN (R 4.3.0)
+ DelayedArray           0.26.7    2023-07-28 [2] Bioconductor
+ DelayedMatrixStats     1.22.6    2023-08-28 [2] Bioconductor
+ deldir                 1.0-9     2023-05-17 [2] CRAN (R 4.3.0)
+ digest                 0.6.33    2023-07-07 [2] CRAN (R 4.3.0)
+ doParallel             1.0.17    2022-02-07 [2] CRAN (R 4.3.0)
+ dotCall64              1.0-2     2022-10-03 [2] CRAN (R 4.3.0)
+ DoubletFinder        * 2.0.4     2024-06-11 [2] Github (chris-mcginnis-ucsf/DoubletFinder@03e9f37)
+ dplyr                * 1.1.3     2023-09-03 [2] CRAN (R 4.3.0)
+ dqrng                  0.3.1     2023-08-30 [2] CRAN (R 4.3.0)
+ DropletUtils         * 1.20.0    2023-04-25 [2] Bioconductor
+ edgeR                  3.42.4    2023-05-31 [2] Bioconductor
+ ellipsis               0.3.2     2021-04-29 [2] CRAN (R 4.3.0)
+ enrichR                3.2       2023-04-14 [2] CRAN (R 4.3.0)
+ evaluate               0.21      2023-05-05 [2] CRAN (R 4.3.0)
+ fansi                  1.0.4     2023-01-22 [2] CRAN (R 4.3.0)
+ farver                 2.1.1     2022-07-06 [2] CRAN (R 4.3.0)
+ fastDummies            1.7.3     2023-07-06 [2] CRAN (R 4.3.0)
+ fastmap                1.1.1     2023-02-24 [2] CRAN (R 4.3.0)
+ fields               * 15.2      2023-08-17 [2] CRAN (R 4.3.0)
+ fitdistrplus           1.1-11    2023-04-25 [2] CRAN (R 4.3.0)
+ forcats              * 1.0.0     2023-01-29 [2] CRAN (R 4.3.0)
+ foreach                1.5.2     2022-02-02 [2] CRAN (R 4.3.0)
+ future                 1.33.0    2023-07-01 [2] CRAN (R 4.3.0)
+ future.apply           1.11.0    2023-05-21 [2] CRAN (R 4.3.0)
+ generics               0.1.3     2022-07-05 [2] CRAN (R 4.3.0)
+ GenomeInfoDb         * 1.36.2    2023-08-25 [2] Bioconductor
+ GenomeInfoDbData       1.2.10    2023-09-01 [2] Bioconductor
+ GenomicAlignments      1.36.0    2023-04-25 [2] Bioconductor
+ GenomicRanges        * 1.52.0    2023-04-25 [2] Bioconductor
+ ggbeeswarm             0.7.2     2023-04-29 [2] CRAN (R 4.3.0)
+ ggplot2              * 3.5.1     2024-04-23 [2] CRAN (R 4.3.0)
+ ggrepel                0.9.3     2023-02-03 [2] CRAN (R 4.3.0)
+ ggridges               0.5.4     2022-09-26 [2] CRAN (R 4.3.0)
+ globals                0.16.2    2022-11-21 [2] CRAN (R 4.3.0)
+ glue                   1.6.2     2022-02-24 [2] CRAN (R 4.3.0)
+ goftest                1.2-3     2021-10-07 [2] CRAN (R 4.3.0)
+ gridExtra              2.3       2017-09-09 [2] CRAN (R 4.3.0)
+ gridGraphics           0.5-1     2020-12-13 [2] CRAN (R 4.3.0)
+ gtable                 0.3.4     2023-08-21 [2] CRAN (R 4.3.0)
+ HDF5Array              1.28.1    2023-05-01 [2] Bioconductor
+ hms                    1.1.3     2023-03-21 [2] CRAN (R 4.3.0)
+ htmltools              0.5.6     2023-08-10 [2] CRAN (R 4.3.0)
+ htmlwidgets            1.6.2     2023-03-17 [2] CRAN (R 4.3.0)
+ httpuv                 1.6.11    2023-05-11 [2] CRAN (R 4.3.0)
+ httr                   1.4.7     2023-08-15 [2] CRAN (R 4.3.0)
+ ica                    1.0-3     2022-07-08 [2] CRAN (R 4.3.0)
+ igraph                 1.5.1     2023-08-10 [2] CRAN (R 4.3.0)
+ IRanges              * 2.34.1    2023-06-22 [2] Bioconductor
+ irlba                  2.3.5.1   2022-10-03 [2] CRAN (R 4.3.0)
+ iterators              1.0.14    2022-02-05 [2] CRAN (R 4.3.0)
+ jsonlite               1.8.7     2023-06-29 [2] CRAN (R 4.3.0)
+ KernSmooth           * 2.23-20   2021-05-03 [3] CRAN (R 4.3.0)
+ knitr                  1.43      2023-05-25 [2] CRAN (R 4.3.0)
+ labeling               0.4.3     2023-08-29 [2] CRAN (R 4.3.0)
+ later                  1.3.1     2023-05-02 [2] CRAN (R 4.3.0)
+ lattice                0.21-8    2023-04-05 [3] CRAN (R 4.3.0)
+ lazyeval               0.2.2     2019-03-15 [2] CRAN (R 4.3.0)
+ leiden                 0.4.3     2022-09-10 [2] CRAN (R 4.3.0)
+ lifecycle              1.0.3     2022-10-07 [2] CRAN (R 4.3.0)
+ limma                  3.56.2    2023-06-04 [2] Bioconductor
+ listenv                0.9.0     2022-12-16 [2] CRAN (R 4.3.0)
+ lmtest                 0.9-40    2022-03-21 [2] CRAN (R 4.3.0)
+ locfit                 1.5-9.8   2023-06-11 [2] CRAN (R 4.3.0)
+ lubridate            * 1.9.2     2023-02-10 [2] CRAN (R 4.3.0)
+ magick                 2.7.5     2023-08-07 [2] CRAN (R 4.3.0)
+ magrittr               2.0.3     2022-03-30 [2] CRAN (R 4.3.0)
+ maps                   3.4.1     2022-10-30 [2] CRAN (R 4.3.0)
+ MASS                   7.3-58.4  2023-03-07 [3] CRAN (R 4.3.0)
+ Matrix               * 1.6-5     2024-01-11 [2] CRAN (R 4.3.0)
+ MatrixGenerics       * 1.12.3    2023-07-30 [2] Bioconductor
+ matrixStats          * 1.0.0     2023-06-02 [2] CRAN (R 4.3.0)
+ MCMCprecision          0.4.0     2019-12-05 [2] CRAN (R 4.3.0)
+ metapod                1.8.0     2023-04-25 [2] Bioconductor
+ mime                   0.12      2021-09-28 [2] CRAN (R 4.3.0)
+ miniUI                 0.1.1.1   2018-05-18 [2] CRAN (R 4.3.0)
+ multipanelfigure       2.1.2     2020-03-04 [2] CRAN (R 4.3.0)
+ munsell                0.5.0     2018-06-12 [2] CRAN (R 4.3.0)
+ nlme                   3.1-162   2023-01-31 [3] CRAN (R 4.3.0)
+ parallelly             1.36.0    2023-05-26 [2] CRAN (R 4.3.0)
+ patchwork              1.2.0     2024-01-08 [2] CRAN (R 4.3.0)
+ pbapply                1.7-2     2023-06-27 [2] CRAN (R 4.3.0)
+ pillar                 1.9.0     2023-03-22 [2] CRAN (R 4.3.0)
+ pkgconfig              2.0.3     2019-09-22 [2] CRAN (R 4.3.0)
+ plotly                 4.10.2    2023-06-03 [2] CRAN (R 4.3.0)
+ plyr                   1.8.8     2022-11-11 [2] CRAN (R 4.3.0)
+ png                    0.1-8     2022-11-29 [2] CRAN (R 4.3.0)
+ polyclip               1.10-4    2022-10-20 [2] CRAN (R 4.3.0)
+ progressr              0.14.0    2023-08-10 [2] CRAN (R 4.3.0)
+ promises               1.2.1     2023-08-10 [2] CRAN (R 4.3.0)
+ purrr                * 1.0.2     2023-08-10 [2] CRAN (R 4.3.0)
+ R.methodsS3            1.8.2     2022-06-13 [2] CRAN (R 4.3.0)
+ R.oo                   1.25.0    2022-06-12 [2] CRAN (R 4.3.0)
+ R.utils                2.12.2    2022-11-11 [2] CRAN (R 4.3.0)
+ R6                     2.5.1     2021-08-19 [2] CRAN (R 4.3.0)
+ RANN                   2.6.1     2019-01-08 [2] CRAN (R 4.3.0)
+ RColorBrewer           1.1-3     2022-04-03 [2] CRAN (R 4.3.0)
+ Rcpp                   1.0.11    2023-07-06 [2] CRAN (R 4.3.0)
+ RcppAnnoy              0.0.21    2023-07-02 [2] CRAN (R 4.3.0)
+ RcppEigen              0.3.3.9.3 2022-11-05 [2] CRAN (R 4.3.0)
+ RcppHNSW               0.4.1     2022-07-18 [2] CRAN (R 4.3.0)
+ RCurl                  1.98-1.12 2023-03-27 [2] CRAN (R 4.3.0)
+ readr                * 2.1.4     2023-02-10 [2] CRAN (R 4.3.0)
+ reshape2               1.4.4     2020-04-09 [2] CRAN (R 4.3.0)
+ restfulr               0.0.15    2022-06-16 [2] CRAN (R 4.3.0)
+ reticulate             1.31      2023-08-10 [2] CRAN (R 4.3.0)
+ rhdf5                  2.44.0    2023-04-25 [2] Bioconductor
+ rhdf5filters           1.12.1    2023-04-30 [2] Bioconductor
+ Rhdf5lib               1.22.0    2023-04-25 [2] Bioconductor
+ rjson                  0.2.21    2022-01-09 [2] CRAN (R 4.3.0)
+ rlang                  1.1.4     2024-06-04 [2] CRAN (R 4.3.0)
+ rmarkdown              2.24      2023-08-14 [2] CRAN (R 4.3.0)
+ ROCR                 * 1.0-11    2020-05-02 [2] CRAN (R 4.3.0)
+ Rsamtools              2.16.0    2023-04-25 [2] Bioconductor
+ RSpectra               0.16-1    2022-04-24 [2] CRAN (R 4.3.0)
+ rstudioapi             0.15.0    2023-07-07 [2] CRAN (R 4.3.0)
+ rsvd                   1.0.5     2021-04-16 [2] CRAN (R 4.3.0)
+ rtracklayer            1.60.1    2023-08-15 [2] Bioconductor
+ Rtsne                  0.16      2022-04-17 [2] CRAN (R 4.3.0)
+ S4Arrays               1.2.1     2024-03-04 [2] Bioconductor 3.18 (R 4.3.0)
+ S4Vectors            * 0.38.2    2023-09-22 [1] Bioconductor
+ ScaledMatrix           1.8.1     2023-05-03 [2] Bioconductor
+ scales                 1.3.0     2023-11-28 [2] CRAN (R 4.3.0)
+ scater               * 1.28.0    2023-04-25 [2] Bioconductor
+ scattermore            1.2       2023-06-12 [2] CRAN (R 4.3.0)
+ scDblFinder          * 1.14.0    2023-04-25 [2] Bioconductor
+ scran                * 1.28.2    2023-07-23 [2] Bioconductor
+ sctransform            0.4.1     2023-10-19 [2] CRAN (R 4.3.0)
+ scuttle              * 1.10.2    2023-08-03 [2] Bioconductor
+ sessioninfo          * 1.2.2     2021-12-06 [2] CRAN (R 4.3.0)
+ Seurat               * 5.1.0     2024-05-10 [2] CRAN (R 4.3.0)
+ SeuratObject         * 5.0.2     2024-05-08 [2] CRAN (R 4.3.0)
+ shiny                  1.7.5     2023-08-12 [2] CRAN (R 4.3.0)
+ SingleCellExperiment * 1.22.0    2023-04-25 [2] Bioconductor
+ sp                   * 2.0-0     2023-06-22 [2] CRAN (R 4.3.0)
+ spam                 * 2.9-1     2022-08-07 [2] CRAN (R 4.3.0)
+ sparseMatrixStats      1.12.2    2023-07-02 [2] Bioconductor
+ spatstat.data          3.0-1     2023-03-12 [2] CRAN (R 4.3.0)
+ spatstat.explore       3.2-1     2023-05-13 [2] CRAN (R 4.3.0)
+ spatstat.geom          3.2-4     2023-07-20 [2] CRAN (R 4.3.0)
+ spatstat.random        3.1-5     2023-05-11 [2] CRAN (R 4.3.0)
+ spatstat.sparse        3.0-2     2023-06-25 [2] CRAN (R 4.3.0)
+ spatstat.utils         3.0-3     2023-05-09 [2] CRAN (R 4.3.0)
+ statmod                1.5.0     2023-01-06 [2] CRAN (R 4.3.0)
+ stringi                1.7.12    2023-01-11 [2] CRAN (R 4.3.0)
+ stringr              * 1.5.0     2022-12-02 [2] CRAN (R 4.3.0)
+ SummarizedExperiment * 1.30.2    2023-06-06 [2] Bioconductor
+ survival               3.5-5     2023-03-12 [3] CRAN (R 4.3.0)
+ tensor                 1.5       2012-05-05 [2] CRAN (R 4.3.0)
+ tibble               * 3.2.1     2023-03-20 [2] CRAN (R 4.3.0)
+ tidyr                * 1.3.0     2023-01-24 [2] CRAN (R 4.3.0)
+ tidyselect             1.2.0     2022-10-10 [2] CRAN (R 4.3.0)
+ tidyverse            * 2.0.0     2023-02-22 [2] CRAN (R 4.3.0)
+ timechange             0.2.0     2023-01-11 [2] CRAN (R 4.3.0)
+ tzdb                   0.4.0     2023-05-12 [2] CRAN (R 4.3.0)
+ utf8                   1.2.3     2023-01-31 [2] CRAN (R 4.3.0)
+ uwot                   0.1.16    2023-06-29 [2] CRAN (R 4.3.0)
+ vctrs                  0.6.3     2023-06-14 [2] CRAN (R 4.3.0)
+ vipor                  0.4.5     2017-03-22 [2] CRAN (R 4.3.0)
+ viridis                0.6.4     2023-07-22 [2] CRAN (R 4.3.0)
+ viridisLite          * 0.4.2     2023-05-02 [2] CRAN (R 4.3.0)
+ withr                  2.5.0     2022-03-03 [2] CRAN (R 4.3.0)
+ WriteXLS               6.4.0     2022-02-24 [2] CRAN (R 4.3.0)
+ xfun                   0.40      2023-08-09 [2] CRAN (R 4.3.0)
+ xgboost                1.7.5.1   2023-03-30 [2] CRAN (R 4.3.0)
+ XML                    3.99-0.14 2023-03-19 [2] CRAN (R 4.3.0)
+ xtable                 1.8-4     2019-04-21 [2] CRAN (R 4.3.0)
+ XVector                0.40.0    2023-04-25 [2] Bioconductor
+ yaml                   2.3.7     2023-01-23 [2] CRAN (R 4.3.0)
+ zlibbioc               1.46.0    2023-04-25 [2] Bioconductor
+ zoo                    1.8-12    2023-04-13 [2] CRAN (R 4.3.0)
+
+ [1] /home/imm/exet5457/R/x86_64-pc-linux-gnu-library/4.3
+ [2] /package/R-cbrg/current/4.3.0
+ [3] /package/R-base/4.3.0/lib/R/library
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
