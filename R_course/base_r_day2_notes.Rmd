@@ -1,0 +1,27 @@
+---
+title: "Notes_d2"
+author: "Lara"
+date: "2025-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Sorting and ordering 
+
+Can use order function to get the right order of one column and use that as an input for indexing the data frame > will 'sort' the table by that index (without the sort function; wouldnt work here) 
+
+sort can't be used on data frames, just on vectors
+
+1. figure out the order with order() function
+2. use output of 1 as indexing to actually do the ordering of the dataframe
+
+can order by multiple columns 
+
+## Insert code
+
+command + option + i to insert R code section
+
+

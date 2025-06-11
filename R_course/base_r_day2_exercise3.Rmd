@@ -1,0 +1,230 @@
+---
+title: "Exerecise2"
+author: "Lara"
+date: "2025-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+command + option + i to insert R code section
+```{r}
+
+```
+Exercise
+Sorting data frames
+Load the airquality data set.
+
+```{r}
+data("airquality")
+```
+
+Open the help page for this data set.
+
+```{r}
+help("airquality")
+```
+
+Examine the data set.
+Display the column names of the airquality data frame.
+
+```{r}
+colnames(airquality)
+```
+
+Sort the data frame by increasing value in the Ozone column.
+
+```{r}
+o <- order(airquality$Ozone)
+airquality[o, ]
+
+# or shorter
+airquality[order(airquality$Ozone), ]
+
+```
+
+Sort the data frame by Month in increasing order and Temp in decreasing order.
+
+```{r}
+o2 <- order(airquality$Ozone,airquality$Month, -airquality$Temp)
+
+airquality[o2, ]
+
+## - to flip the order only works for numeric data; wouldn't work for columns with characters
+airquality[order(airquality$Month, -airquality$Temp), ] # in one argument
+
+## OR TRUE and FALSE as vector
+
+airquality[order(airquality$Month, -airquality$Temp, decreasing = c(FALSE, TRUE)), ]
+
+```
+
+Write the latest sorted data frame to a text file format of your choice.
+
+```{r}
+write.table(airquality[order(airquality$Month, -airquality$Temp), ], file = "airquality_sorted", sep = "\t")
+
+read.delim("airquality_sorted")
+```
+## Exercise
+Merging data frames
+Run the code below to create two data frames.
+
+```{r}
+buildings <- data.frame(
+site = c(1, 2, 3),
+name = c("b1", "b2","b3"))
+
+survey_data <- data.frame(
+  survey = c("A","A","A","B","B","B"),
+  location = c(1, 2, 3, 2, 3, 1),
+  efficiency = c(51, 64, 70, 71, 80, 58))
+```
+
+What is the shared information in these two data frames?
+site/ location
+
+Use the merge() function to combine the two data frames by the shared information into a new data frame called buildings_survey.
+
+```{r}
+colnames(buildings) <- c("location", "name")
+
+buildings_survey = merge(x = buildings, y = survey_data, by = "location", all = TRUE)
+
+## Better:
+buildings_survey = merge(x = buildings, y = survey_data, by.y = "location", by.x = "site", all = TRUE) # no renaming neceesary, much better
+
+```
+
+## Exercise
+Summarising groups of data
+Compute the mean of each numeric column each month in the airquality data frame using aggregate().
+Make sure NA values are removed.
+
+```{r}
+aggregate(x = airquality, by = list(month = airquality$Month), FUN = mean, na.rm = TRUE)
+```
+
+
+Compute the mean of the Solar.R column each month.
+Make sure the grouping column is called Month in the return value.
+Make sure NA values are removed.
+
+```{r}
+aggregate(x = airquality$Solar.R, by = list(month = airquality$Month), FUN = mean, na.rm = TRUE)
+```
+
+
+```{r}
+# to include more than one column but not all 
+
+aggregate(x = airquality[, c("Solar.R", "Temp")], by = list(month = airquality$Month), FUN = mean, na.rm = TRUE)
+```
+
+## Exercise
+Writing a function
+Write a function to calculate the hypotenuse of a triangle given the length of the other two sides.
+Run the function you have created with diﬀerent values
+
+```{r}
+
+hypotenuse_triangle <- function(side1, side2, ...){
+  hypotenuse <- sqrt(side1^2 + side2^2)
+  return(hypotenuse)
+  }
+
+hypotenuse_triangle(3, 4)
+
+```
+
+## Exercise
+Apply
+Part 1
+Create a vector of integers from 1 to 10.
+
+```{r}
+v <- c(1:10)
+
+
+```
+
+
+Compute the log2 of each value in the vector using either lapply() or sapply().
+
+```{r}
+sapply(X = v, FUN = log2)
+```
+
+```{r}
+lapply(X = v, FUN = log2)
+```
+
+Compare the outputs of lapply() and sapply() in the previous step.
+Part 2
+Create a list of four elements, each element being a vector of type either numeric or logical.
+
+```{r}
+l <- list(1:5, 10:20, 7:19, TRUE)
+```
+
+
+Compute the sum of each vector in the list using either lapply() or sapply().
+
+```{r}
+sapply(X = l, FUN = sum)
+```
+
+
+Part 3
+Use sapply() on the list that you created in part 2, to repeat each element of each vector three times.
+i.e., 1, 2, 3 should become 1, 1, 1, 2, 2, 2, 3, 3, 3
+
+```{r}
+sapply(X = l, FUN = rep, each =3)
+# specify input argument for rep function inside sapply, doesn't have to be defined in rep function
+```
+
+## Exercise
+Loops and conditions
+Write a for loop that iterates over the integers 1 to 7 and prints the number raised to the power of three.
+
+```{r}
+for (i in 1:7) {
+  print(i^3)
+}
+```
+
+
+Write a for loop that iterates over the names of the columns in the builtin data set iris and prints each column name together with the number of characters in that column name.
+Example output: Sepal.Length: 12
+
+```{r}
+data("iris")
+for (i in 1:ncol(iris)) {
+  print(paste(colnames(iris[i]), nchar(colnames(iris[i]))))
+}
+
+
+# easier
+for (i in colnames(iris)) {
+  print(paste(colnames(iris[i]), nchar(colnames(iris[i]))))
+  }
+```
+
+
+
+Hint: use the functions print(), paste0(), and nchar().
+Remember to read the help page of each function to learn more about them.
+
+Use the ifelse() function to print the name of colours that are made up of four characters in the vector
+my_colours below.
+
+```{r}
+my_colours <- c("red","orange","purple","yellow","pink","blue")
+
+
+ifelse(test = nchar(my_colours) == 4, yes = my_colours, no = "")
+
+```
+
